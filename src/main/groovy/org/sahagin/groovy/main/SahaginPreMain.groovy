@@ -5,6 +5,7 @@ import java.lang.instrument.Instrumentation
 
 import org.apache.commons.io.FileUtils
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGenerator
+import org.sahagin.main.SahaginMain
 import org.sahagin.runlib.external.adapter.Adapter
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.runlib.external.adapter.fluentlenium.FluentLeniumAdapter
@@ -56,6 +57,10 @@ class SahaginPreMain {
         }
 
         SrcTree srcTree = generateAndDumpSrcTree(config, locales)
+
+        // TODO temp
+        String[] args = ["report", configFilePath]
+        SahaginMain.main(args)
     }
 
     private static SrcTree generateAndDumpSrcTree(Config config, AcceptableLocales locales) {
