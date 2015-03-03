@@ -1,0 +1,44 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <groupId>org.sahagin</groupId>
+  <artifactId>sahagin-groovy</artifactId>
+  <version>0.6-SNAPSHOT</version>
+  <name>Sahagin Groovy</name>
+  <description>Make your Groovy Selenium script more readable and maintainable.</description>
+  <url>https://github.com/SahaginOrg/sahagin-groovy</url>
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Nozomi Ito</name>
+      <email>nozomi.ito@trident-qa.com</email>
+      <organization>TRIDENT Inc.</organization>
+      <organizationUrl>http://www.trident-qa.com</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/SahaginOrg/sahagin-groovy.git</connection>
+    <developerConnection>scm:git:git://github.com/SahaginOrg/sahagin-groovy.git</developerConnection>
+    <url>https://github.com/SahaginOrg/sahagin-groovy</url>
+  </scm>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.sahagin</groupId>
+      <artifactId>sahagin</artifactId>
+      <version>0.5</version>
+    </dependency>
+  </dependencies>  
+</project>
