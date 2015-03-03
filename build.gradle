@@ -9,3 +9,7 @@ dependencies {
   compile "org.codehaus.groovy:groovy-all:2.4.1"
   compile "org.sahagin:sahagin:0.5"
 }
+
+jar {
+  manifest.attributes 'Premain-Class': 'org.sahagin.groovy.main.SahaginPreMain'
+}

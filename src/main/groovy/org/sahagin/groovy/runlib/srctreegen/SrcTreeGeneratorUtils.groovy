@@ -1,8 +1,5 @@
 package org.sahagin.groovy.runlib.srctreegen
 
-import java.util.ArrayList
-import java.util.List
-
 import org.apache.commons.lang3.tuple.Pair
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
@@ -16,9 +13,9 @@ import org.sahagin.runlib.srctreegen.ASTUtils
 import org.sahagin.share.srctree.TestMethod
 import org.junit.Test
 import org.sahagin.runlib.external.TestDoc
-    
+
 class SrcTreeGeneratorUtils {
-    
+
     private static List<String> getArgClassQualifiedNames(MethodNode method) {
         // TODO parameterized etc
 
@@ -40,7 +37,7 @@ class SrcTreeGeneratorUtils {
                     classQualifiedName, methodSimpleName, argClassQualifiedNames)
         }
     }
-    
+
     // TODO
     static boolean isRootMethod(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
@@ -55,7 +52,7 @@ class SrcTreeGeneratorUtils {
         }
         return false
     }
-    
+
     // TODO temporal
     static String getTestDoc(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
@@ -70,7 +67,7 @@ class SrcTreeGeneratorUtils {
         }
         return null
     }
-    
+
     // TODO
     static boolean isSubMethod(MethodNode node) {
         if (isRootMethod(node)) {
@@ -78,5 +75,5 @@ class SrcTreeGeneratorUtils {
         }
         return getTestDoc(node) != null
     }
-    
+
 }

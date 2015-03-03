@@ -1,11 +1,6 @@
 package org.sahagin.groovy.runlib.srctreegen
 
-import java.io.File
-import java.util.Map.Entry
 import java.util.regex.Pattern
-
-import groovyjarjarantlr.collections.AST
-
 import org.codehaus.groovy.antlr.AntlrASTProcessSnippets
 import org.codehaus.groovy.antlr.AntlrParserPlugin
 import org.codehaus.groovy.antlr.SourceBuffer
@@ -29,22 +24,18 @@ import org.codehaus.groovy.ast.ClassNode
 
 class SrcTreeGenerator {
 
-    SrcTree generate(String[] srcPaths) {        
+    SrcTree generate(String[] srcFiles, String[] classPathEntries) {
         ClassLoader parentLoader = ClassLoader.getSystemClassLoader()
         GroovyClassLoader groovyLoader = new GroovyClassLoader(parentLoader)
-
-        // TODO check jar manifest, etc
-        String classPathStr = System.getProperty("java.class.path")
-        String[] classPathArray = classPathStr.split(Pattern.quote(File.pathSeparator))
-        for (String classPath : classPathArray) {
+        for (String classPath : classPathEntries) {
             groovyLoader.addClasspath(classPath)
         }
-        
+
         CompilationUnit compilation = new CompilationUnit(groovyLoader)
-        compilation.addSources(srcPaths)
+        compilation.addSources(srcFiles)
         compilation.compile()
         Collection<SourceUnit> sources = compilation.sources.values()
-                
+
         CollectRootVisitor rootVisitor = new CollectRootVisitor()
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
@@ -66,12 +57,19 @@ class SrcTreeGenerator {
                 classNode.visitContents(codeVisitor)
             }
         }
-        
+
         SrcTree result = new SrcTree()
         result.setRootClassTable(rootVisitor.getRootClassTable())
         result.setSubClassTable(subVisitor.getSubClassTable())
         result.setRootMethodTable(rootVisitor.getRootMethodTable())
         result.setSubMethodTable(subVisitor.getSubMethodTable())
         return result
+    }
+
+    SrcTree generate(String[] srcFiles) {
+        // TODO check jar manifest, etc
+        String classPathStr = System.getProperty("java.class.path")
+        String[] classPathEntries = classPathStr.split(Pattern.quote(File.pathSeparator))
+        return generate(srcFiles, classPathEntries)
     }
 }
