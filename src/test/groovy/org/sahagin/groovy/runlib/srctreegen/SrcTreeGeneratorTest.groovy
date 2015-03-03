@@ -6,16 +6,15 @@ import org.junit.Test
 import org.sahagin.share.yaml.YamlUtils
 
 class SrcTreeGeneratorTest {
-    
+
     @Test
-    void variousData() {      
+    void variousData() {
         // TODO dummy
         SrcTreeGenerator gen = new SrcTreeGenerator()
-        String[] files = ["src/test/resources/org/sahagin/groovy/runlib/srctreegen/SrcTreeGeneratorTestRes/variousData/input/TestMain.groovy", \
-                      "src/test/resources/org/sahagin/groovy/runlib/srctreegen/SrcTreeGeneratorTestRes/variousData/input/TestSub.groovy"]
-        SrcTree srcTree = gen.generate(files)
+        File rootDir = new File("src/test/resources/org/sahagin/groovy/runlib/srctreegen/SrcTreeGeneratorTestRes/variousData/input")
+        SrcTree srcTree = gen.generateWithRuntimeClassPath(rootDir)
         YamlUtils.dump(srcTree.toYamlObject(), new File("a/result.txt"))
-        
+
     }
 
 }

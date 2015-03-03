@@ -1,6 +1,7 @@
 package org.sahagin.groovy.runlib.srctreegen
 
 import java.util.regex.Pattern
+import org.apache.commons.io.FileUtils
 import org.codehaus.groovy.antlr.AntlrASTProcessSnippets
 import org.codehaus.groovy.antlr.AntlrParserPlugin
 import org.codehaus.groovy.antlr.SourceBuffer
@@ -66,10 +67,23 @@ class SrcTreeGenerator {
         return result
     }
 
-    SrcTree generate(String[] srcFiles) {
+    SrcTree generateWithRuntimeClassPath(File srcRootDir) {
+        // set up srcFilePaths
+        if (!srcRootDir.exists()) {
+            throw new IllegalArgumentException("directory does not exist: " + srcRootDir.getAbsolutePath())
+        }
+        // TODO support Java and Groovy mixed project
+        String[] extensions = ["groovy"]
+        Collection<File> srcFileCollection = FileUtils.listFiles(srcRootDir, extensions, true)
+        List<File> srcFileList = new ArrayList<File>(srcFileCollection)
+        String[] srcFilePaths = new String[srcFileList.size()]
+        for (int i = 0; i < srcFileList.size(); i++) {
+            srcFilePaths[i] = srcFileList.get(i).getAbsolutePath()
+        }
+
         // TODO check jar manifest, etc
         String classPathStr = System.getProperty("java.class.path")
         String[] classPathEntries = classPathStr.split(Pattern.quote(File.pathSeparator))
-        return generate(srcFiles, classPathEntries)
+        return generate(srcFilePaths, classPathEntries)
     }
 }
