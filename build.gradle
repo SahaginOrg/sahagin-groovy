@@ -1,0 +1,11 @@
+apply plugin: "groovy"
+apply plugin: "eclipse"
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile "org.codehaus.groovy:groovy-all:2.4.1"
+  compile "org.sahagin:sahagin:0.5"
+}
