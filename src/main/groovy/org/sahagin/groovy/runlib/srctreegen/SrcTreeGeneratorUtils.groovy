@@ -1,12 +1,14 @@
 package org.sahagin.groovy.runlib.srctreegen
 
 import org.apache.commons.lang3.tuple.Pair
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
-import org.eclipse.jdt.core.dom.IMethodBinding
-import org.eclipse.jdt.core.dom.ITypeBinding
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.srctreegen.ASTUtils
@@ -35,6 +37,29 @@ class SrcTreeGeneratorUtils {
         } else {
             return TestMethod.generateMethodKey(
                     classQualifiedName, methodSimpleName, argClassQualifiedNames)
+        }
+    }
+
+    private static List<String> getArgClassQualifiedNames(ArgumentListExpression argumentList) {
+        // TODO parameterized etc
+
+        List<String> result = new ArrayList<String>(argumentList.getExpressions().size())
+        for (Expression argument : argumentList.getExpressions()) {
+            result.add(argument.getType().getName())
+        }
+        return result
+    }
+
+    static String generateMethodKey(Expression receiverExpression, String methodAsString,
+        ArgumentListExpression argumentList, boolean noArgClassesStr) {
+        // TODO if fails to infer class type??
+        String classQualifiedName = receiverExpression.getType().getName()
+        List<String> argClassQualifiedNames = getArgClassQualifiedNames(argumentList)
+        if (noArgClassesStr) {
+            return TestMethod.generateMethodKey(classQualifiedName, methodAsString)
+        } else {
+            return TestMethod.generateMethodKey(
+                classQualifiedName, methodAsString, argClassQualifiedNames)
         }
     }
 

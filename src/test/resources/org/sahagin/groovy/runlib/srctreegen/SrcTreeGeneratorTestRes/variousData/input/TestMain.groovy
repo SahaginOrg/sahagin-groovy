@@ -6,10 +6,11 @@ class TestMain {
 
     @Test
     void test3() {
-        TestSub s = new TestSub();
+        TestSub s = new TestSub()
+        s.sub()
         println 'ABC'
     }
-   
+
     @Test
     void test4() {
         println 'ABC'

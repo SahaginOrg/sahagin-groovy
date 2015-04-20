@@ -7,9 +7,6 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.control.SourceUnit
-import org.eclipse.jdt.core.dom.CompilationUnit
-import org.eclipse.jdt.core.dom.FileASTRequestor
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
@@ -34,12 +31,12 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
     TestMethodTable getRootMethodTable() {
         return rootMethodTable
     }
-    
+
     @Override
     protected SourceUnit getSourceUnit() {
         return null // dummy
     }
-    
+
     @Override
     void visitMethod(MethodNode node) {
         if (!SrcTreeGeneratorUtils.isRootMethod(node)) {
@@ -49,7 +46,7 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
         // TODO enum etc
         ClassNode classNode = node.getDeclaringClass()
-        
+
         TestClass rootClass = rootClassTable.getByKey(classNode.getName())
         if (rootClass == null) {
             // TODO testDoc handling

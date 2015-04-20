@@ -5,14 +5,8 @@ import org.sahagin.runlib.external.TestDoc
 
 class TestSub {
 
-    @Test
-    void test() {
-        TestMain m = new TestMain();
-        println 'ABC'
-    }
-    
-    @TestDoc("a")
-    void test2() {
-        println 'ABC'
+    @TestDoc("subDoc")
+    void sub() {
+        println 'DEF'
     }
 }
