@@ -7,6 +7,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
@@ -78,7 +79,7 @@ class SrcTreeGeneratorUtils {
         return false
     }
 
-    // TODO temporal
+    // TODO captureStyle, lang, TestDocs, etc
     static String getTestDoc(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
         if (annotations == null) {
@@ -87,7 +88,10 @@ class SrcTreeGeneratorUtils {
         for (AnnotationNode annotation : annotations) {
             ClassNode classNode = annotation.getClassNode()
             if (classNode.name == TestDoc.class.getCanonicalName()) {
-                return "dummy"
+                Expression valueNode = annotation.getMember("value")
+                assert valueNode != null
+                assert valueNode instanceof ConstantExpression
+                return (valueNode as ConstantExpression).getValue().toString()
             }
         }
         return null

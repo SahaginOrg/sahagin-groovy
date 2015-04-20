@@ -49,10 +49,10 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
         TestClass rootClass = rootClassTable.getByKey(classNode.getName())
         if (rootClass == null) {
-            // TODO testDoc handling
             rootClass = new TestClass()
             rootClass.setKey(classNode.getName())
             rootClass.setQualifiedName(classNode.getName())
+            // TODO testDoc, captureStyle, TestDocs, etc
             rootClass.setTestDoc("")
             rootClassTable.addTestClass(rootClass)
         }
@@ -60,8 +60,8 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
         TestMethod testMethod = new TestMethod()
         testMethod.setKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
         testMethod.setSimpleName(node.getName())
-        // TODO testDocc and captureStyle
-        testMethod.setTestDoc("")
+        // TODO captureStyle, TestDocs, etc
+        testMethod.setTestDoc(SrcTreeGeneratorUtils.getTestDoc(node))
         for (Parameter param : node.getParameters()) {
             testMethod.addArgVariable(param.getName())
             // TODO variable argument
