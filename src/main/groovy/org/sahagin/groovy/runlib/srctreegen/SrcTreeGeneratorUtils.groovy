@@ -1,5 +1,7 @@
 package org.sahagin.groovy.runlib.srctreegen
 
+import java.util.List
+
 import org.apache.commons.lang3.tuple.Pair
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -10,16 +12,22 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
+import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.srctreegen.ASTUtils
 import org.sahagin.share.srctree.TestMethod
-import org.junit.Test
 import org.sahagin.runlib.external.TestDoc
 
 class SrcTreeGeneratorUtils {
+    private AdditionalTestDocs additionalTestDocs
 
-    private static List<String> getArgClassQualifiedNames(MethodNode method) {
+    SrcTreeGeneratorUtils(AdditionalTestDocs additionalTestDocs) {
+        this.additionalTestDocs = additionalTestDocs
+    }
+
+    private List<String> getArgClassQualifiedNames(MethodNode method) {
         // TODO parameterized etc
 
         List<String> result = new ArrayList<String>(method.getParameters().length)
@@ -29,7 +37,7 @@ class SrcTreeGeneratorUtils {
         return result
     }
 
-    static String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
+    String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
         String classQualifiedName = method.getDeclaringClass().getName()
         String methodSimpleName = method.getName()
         List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
@@ -41,7 +49,7 @@ class SrcTreeGeneratorUtils {
         }
     }
 
-    private static List<String> getArgClassQualifiedNames(ArgumentListExpression argumentList) {
+    private List<String> getArgClassQualifiedNames(ArgumentListExpression argumentList) {
         // TODO parameterized etc
 
         List<String> result = new ArrayList<String>(argumentList.getExpressions().size())
@@ -51,10 +59,9 @@ class SrcTreeGeneratorUtils {
         return result
     }
 
-    static String generateMethodKey(Expression receiverExpression, String methodAsString,
+    String generateMethodKey(String classQualifiedName, String methodAsString,
         ArgumentListExpression argumentList, boolean noArgClassesStr) {
         // TODO if fails to infer class type??
-        String classQualifiedName = receiverExpression.getType().getName()
         List<String> argClassQualifiedNames = getArgClassQualifiedNames(argumentList)
         if (noArgClassesStr) {
             return TestMethod.generateMethodKey(classQualifiedName, methodAsString)
@@ -64,15 +71,15 @@ class SrcTreeGeneratorUtils {
         }
     }
 
-    // TODO
-    static boolean isRootMethod(MethodNode node) {
+    // TODO move this logic to adapter
+    boolean isRootMethod(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
         if (annotations == null) {
             return false
         }
         for (AnnotationNode annotation : annotations) {
             ClassNode classNode = annotation.getClassNode()
-            if (classNode.name == Test.class.getCanonicalName()) {
+            if (classNode.name == "org.junit.Test") {
                 return true
             }
         }
@@ -80,7 +87,7 @@ class SrcTreeGeneratorUtils {
     }
 
     // TODO captureStyle, lang, TestDocs, etc
-    static String getTestDoc(MethodNode node) {
+    private String getTestDocFromAnnotation(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
         if (annotations == null) {
             return null
@@ -97,8 +104,25 @@ class SrcTreeGeneratorUtils {
         return null
     }
 
+    // TODO captureStyle, lang, TestDocs, etc
+    String getTestDoc(MethodNode method) {
+        // TODO additional TestDoc should be prior to annotation TestDoc !?
+        String annotationTestDoc = getTestDocFromAnnotation(method)
+        if (annotationTestDoc != null) {
+            return annotationTestDoc
+        }
+
+        List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
+        AdditionalMethodTestDoc additional = additionalTestDocs.getMethodTestDoc(
+                method.getDeclaringClass().getName(), method.getName(), argClassQualifiedNames)
+        if (additional != null) {
+            return additional.getTestDoc()
+        }
+        return null
+    }
+
     // TODO
-    static boolean isSubMethod(MethodNode node) {
+    boolean isSubMethod(MethodNode node) {
         if (isRootMethod(node)) {
             return false
         }

@@ -16,14 +16,30 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
+import org.sahagin.runlib.srctreegen.AdditionalTestDocsSetter
 import org.sahagin.runlib.srctreegen.SrcTreeGenerator.CollectRootRequestor
 import org.sahagin.runlib.srctreegen.SrcTreeGenerator.CollectSubRequestor
+import org.sahagin.share.AcceptableLocales
 import org.sahagin.share.srctree.SrcTree
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.ClassNode
 
 class SrcTreeGenerator {
+    private AdditionalTestDocs additionalTestDocs
+    private AcceptableLocales locales
+
+    // additionalTestDocs can be null
+    SrcTreeGenerator(AdditionalTestDocs additionalTestDocs, AcceptableLocales locales) {
+        if (additionalTestDocs == null) {
+            // use empty additionalTestDocs
+            this.additionalTestDocs = new AdditionalTestDocs()
+        } else {
+            this.additionalTestDocs = additionalTestDocs
+        }
+        this.locales = locales
+    }
 
     SrcTree generate(String[] srcFiles, String[] classPathEntries) {
         ClassLoader parentLoader = ClassLoader.getSystemClassLoader()
@@ -37,21 +53,31 @@ class SrcTreeGenerator {
         compilation.compile()
         Collection<SourceUnit> sources = compilation.sources.values()
 
-        CollectRootVisitor rootVisitor = new CollectRootVisitor()
+        SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
+
+        CollectRootVisitor rootVisitor = new CollectRootVisitor(utils)
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(rootVisitor)
             }
         }
-        CollectSubVisitor subVisitor = new CollectSubVisitor(rootVisitor.getRootClassTable())
+        CollectSubVisitor subVisitor = new CollectSubVisitor(
+            rootVisitor.getRootClassTable(), utils)
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(subVisitor)
             }
         }
-        // TODO additional
-        CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
+
+        // add additional TestDoc to the table
+        AdditionalTestDocsSetter setter = new AdditionalTestDocsSetter(
+            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
             rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable())
+        setter.set(additionalTestDocs)
+
+        CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
+            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
+            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(), utils)
         for (SourceUnit src : sources) {
             codeVisitor.setSrcUnit(src)
             for (ClassNode classNode : src.getAST().getClasses()) {

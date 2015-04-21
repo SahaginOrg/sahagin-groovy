@@ -7,21 +7,23 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
-import org.junit.Test
 
 class CollectRootVisitor extends ClassCodeVisitorSupport {
     private TestClassTable rootClassTable
     private TestMethodTable rootMethodTable
+    private SrcTreeGeneratorUtils utils
 
-    CollectRootVisitor() {
+    CollectRootVisitor(SrcTreeGeneratorUtils utils) {
         rootClassTable = new TestClassTable()
         rootMethodTable = new TestMethodTable()
+        this.utils = utils
     }
 
     TestClassTable getRootClassTable() {
@@ -39,7 +41,7 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        if (!SrcTreeGeneratorUtils.isRootMethod(node)) {
+        if (!utils.isRootMethod(node)) {
             super.visitMethod(node)
             return
         }
@@ -58,10 +60,10 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
         }
 
         TestMethod testMethod = new TestMethod()
-        testMethod.setKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
+        testMethod.setKey(utils.generateMethodKey(node, false))
         testMethod.setSimpleName(node.getName())
         // TODO captureStyle, TestDocs, etc
-        testMethod.setTestDoc(SrcTreeGeneratorUtils.getTestDoc(node))
+        testMethod.setTestDoc(utils.getTestDoc(node))
         for (Parameter param : node.getParameters()) {
             testMethod.addArgVariable(param.getName())
             // TODO variable argument

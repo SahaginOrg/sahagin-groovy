@@ -1,0 +1,3 @@
+method:
+  geb.Browser.go:
+    String: 「{0}」にページ遷移  

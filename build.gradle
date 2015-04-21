@@ -3,11 +3,22 @@ apply plugin: "eclipse"
 
 repositories {
   mavenCentral()
+  maven {
+    url "https://oss.sonatype.org/content/repositories/snapshots"
+  }
+}
+
+configurations.all {
+  // check for updates every build to download the latest SNAPSHOT
+  resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
 dependencies {
   compile "org.codehaus.groovy:groovy-all:2.4.1"
-  compile "org.sahagin:sahagin:0.5"
+  compile "org.gebish:geb-core:0.10.0"
+  compile "org.sahagin:sahagin:0.8-SNAPSHOT"
+  testCompile "junit:junit:4.12"
+  testCompile "org.gebish:geb-junit4:0.10.0"
 }
 
 jar {

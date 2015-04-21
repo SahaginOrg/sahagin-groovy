@@ -3,7 +3,9 @@ package org.sahagin.groovy.runlib.srctreegen
 
 
 import java.util.List
+
 import net.sourceforge.htmlunit.corejs.javascript.ast.AstNode
+
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -19,11 +21,15 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
+import org.sahagin.share.srctree.TestClass
+import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.share.srctree.code.Code
@@ -33,13 +39,21 @@ import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.sahagin.share.srctree.code.UnknownCode
 
 class CollectCodeVisitor extends ClassCodeVisitorSupport {
+    private TestClassTable rootClassTable
+    private TestClassTable subClassTable
     private TestMethodTable rootMethodTable
     private TestMethodTable subMethodTable
+    private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
 
-    CollectCodeVisitor(TestMethodTable rootMethodTable, TestMethodTable subMethodTable) {
+    CollectCodeVisitor(TestClassTable rootClassTable, TestClassTable subClassTable,
+        TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
+        SrcTreeGeneratorUtils utils) {
+        this.rootClassTable = rootClassTable
+        this.subClassTable = subClassTable
         this.rootMethodTable = rootMethodTable
         this.subMethodTable = subMethodTable
+        this.utils = utils
     }
 
     void setSrcUnit(SourceUnit srcUnit) {
@@ -51,28 +65,107 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return null // dummy
     }
 
-    private TestMethod getTestMethod(Expression receiverExpression,
+    private TestClass getTestClass(String classQualifiedName) {
+        TestClass testClass = subClassTable.getByKey(classQualifiedName)
+        if (testClass != null) {
+            return testClass
+        }
+        testClass = rootClassTable.getByKey(classQualifiedName)
+        if (testClass != null) {
+            return testClass
+        }
+        return null
+    }
+
+    private TestMethod getTestMethod(String classQualifiedName,
             String methodAsString, ArgumentListExpression argumentList) {
-        TestMethod testMethod = subMethodTable.getByKey(
-                SrcTreeGeneratorUtils.generateMethodKey(receiverExpression, methodAsString, argumentList, false))
+        // TODO argumentList type maybe super type of actual method argument type..
+        TestMethod testMethod = subMethodTable.getByKey(utils.generateMethodKey(
+                classQualifiedName, methodAsString, argumentList, false))
         if (testMethod != null) {
             return testMethod
         }
-        testMethod = subMethodTable.getByKey(
-                SrcTreeGeneratorUtils.generateMethodKey(receiverExpression, methodAsString, argumentList, true))
+        // TODO argumentList type maybe super type of actual method argument type..
+        testMethod = subMethodTable.getByKey(utils.generateMethodKey(
+                classQualifiedName, methodAsString, argumentList, true))
         if (testMethod != null) {
             return testMethod
         }
         return null
     }
 
+    // returns (TestMethod, isSuper)
+    // - if delegate is true, check only delegateTo class
+    def getThisOrSuperMethodSub(ClassNode classNode,
+            String methodAsString, ArgumentListExpression argumentList, boolean delegate) {
+        ClassNode parent = classNode
+        while (parent != null) {
+            String classQualifiedName
+            if (delegate) {
+                TestClass parentTestClass = getTestClass(parent.getName())
+                if (parentTestClass == null) {
+                    parent = parent.getSuperClass()
+                    continue
+                }
+                TestClass delegateToTestClass = parentTestClass.delegateToTestClass
+                if (delegateToTestClass == null) {
+                    parent = parent.getSuperClass()
+                    continue
+                }
+                classQualifiedName = delegateToTestClass.getQualifiedName()
+            } else {
+                classQualifiedName = parent.getName()
+            }
+
+            TestMethod parentTestMethod = getTestMethod(
+                classQualifiedName, methodAsString, argumentList)
+            if (parentTestMethod != null) {
+                return [parentTestMethod, parent != classNode]
+            }
+            parent = parent.getSuperClass()
+        }
+        return [null, false]
+    }
+
+    // returns (TestMethod, isSuper)
+    private def getThisOrSuperTestMethod(ClassNode classNode,
+            String methodAsString, ArgumentListExpression argumentList) {
+        TestMethod invocationMethod
+        boolean isSuper
+
+        // check this class and super class
+        (invocationMethod, isSuper) = getThisOrSuperMethodSub(
+            classNode, methodAsString, argumentList, false)
+        if (invocationMethod != null) {
+            return [invocationMethod, isSuper]
+        }
+
+        // check only delegateTo class for this class and super class
+        (invocationMethod, isSuper) = getThisOrSuperMethodSub(
+            classNode, methodAsString, argumentList, true)
+        if (invocationMethod != null) {
+            return [invocationMethod, isSuper]
+        }
+
+        return [null, false]
+    }
+
     private Code generateMethodInvokeCode(ASTNode receiver,
-        String methodAsString, Expression arguments, String original) {
+        String methodAsString, Expression arguments, String original, ClassNode thisClassNode) {
         // TODO receiver may be null for constructor..
         if (!(receiver instanceof Expression)) {
             return generateUnknownCode(original)
         }
         Expression receiverExpression = receiver as Expression
+        ClassNode classNode
+        if ((receiverExpression instanceof VariableExpression) &&
+            ((receiverExpression as VariableExpression).getName() == "this")) {
+            // type of receiverExpression is Object in this case,
+            // but the type should be the type for thisClassNode
+            classNode = thisClassNode
+        } else {
+            classNode = receiverExpression.getType()
+        }
 
         if (methodAsString == null || methodAsString == "") {
             return generateUnknownCode(original)
@@ -83,9 +176,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
         ArgumentListExpression argumentList = arguments as ArgumentListExpression
 
-        // TODO childInvoke support
-
-        TestMethod invocationMethod = getTestMethod(receiverExpression, methodAsString, argumentList)
+        TestMethod invocationMethod
+        boolean isSuper
+        (invocationMethod, isSuper) =
+        getThisOrSuperTestMethod(classNode, methodAsString, argumentList)
         if (invocationMethod == null) {
             return generateUnknownCode(original)
         }
@@ -95,11 +189,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         subMethodInvoke.setSubMethod(invocationMethod)
         // TODO null thisInstance especially for constructor
         assert receiverExpression != null
-        subMethodInvoke.setThisInstance(expressionCode(receiverExpression))
+        subMethodInvoke.setThisInstance(expressionCode(receiverExpression, thisClassNode))
         for (Expression argExpression : argumentList.getExpressions()) {
-            subMethodInvoke.addArg(expressionCode(argExpression))
+            subMethodInvoke.addArg(expressionCode(argExpression, thisClassNode))
         }
-        // TODO set childInvoke
+        subMethodInvoke.setChildInvoke(isSuper)
         subMethodInvoke.setOriginal(original)
         return subMethodInvoke
     }
@@ -114,7 +208,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return generateUnknownCode(expression.getText()) // TODO temporal logic
     }
 
-    private Code expressionCode(Expression expression) {
+    private Code expressionCode(Expression expression, ClassNode thisClassNode) {
         if (expression == null) {
             StringCode strCode = new StringCode()
             strCode.setValue(null)
@@ -130,7 +224,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     || binary.getRightExpression() instanceof EmptyExpression) {
                     return generateUnknownCode(expression)
                 } else {
-                    return expressionCode(binary.getRightExpression())
+                    return expressionCode(binary.getRightExpression(), thisClassNode)
                 }
             } else {
                 return generateUnknownCode(expression)
@@ -150,13 +244,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             // TODO TestStepLabel handling
             MethodCallExpression methodCall = expression as MethodCallExpression
             return generateMethodInvokeCode(methodCall.getReceiver(),
-                methodCall.getMethodAsString(), methodCall.getArguments(), methodCall.getText())
+                methodCall.getMethodAsString(), methodCall.getArguments(),
+                methodCall.getText(), thisClassNode)
         } else if (expression instanceof ConstructorCallExpression) {
             ConstructorCallExpression constructorCall = expression as ConstructorCallExpression
             return generateMethodInvokeCode(constructorCall.getReceiver(),
-                constructorCall.getMethodAsString(), constructorCall.getArguments(), constructorCall.getText())
+                constructorCall.getMethodAsString(), constructorCall.getArguments(),
+                constructorCall.getText(), thisClassNode)
         } else {
-            // TODO local var , arg ref, etc
+            // TODO local var, arg ref, etc
             return generateUnknownCode(expression)
         }
     }
@@ -164,17 +260,17 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     @Override
     void visitMethod(MethodNode node) {
         TestMethod testMethod
-        if (SrcTreeGeneratorUtils.isRootMethod(node)) {
+        if (utils.isRootMethod(node)) {
             // TODO searching twice from table is not elegant logic..
-            testMethod = rootMethodTable.getByKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
+            testMethod = rootMethodTable.getByKey(utils.generateMethodKey(node, false))
             if (testMethod == null) {
-                testMethod = rootMethodTable.getByKey(SrcTreeGeneratorUtils.generateMethodKey(node, true))
+                testMethod = rootMethodTable.getByKey(utils.generateMethodKey(node, true))
             }
-        } else if (SrcTreeGeneratorUtils.isSubMethod(node)) {
+        } else if (utils.isSubMethod(node)) {
             // TODO searching twice from table is not elegant logic..
-            testMethod = subMethodTable.getByKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
+            testMethod = subMethodTable.getByKey(utils.generateMethodKey(node, false))
             if (testMethod == null) {
-                testMethod = subMethodTable.getByKey(SrcTreeGeneratorUtils.generateMethodKey(node, true))
+                testMethod = subMethodTable.getByKey(utils.generateMethodKey(node, true))
             }
         } else {
             super.visitMethod(node)
@@ -192,7 +288,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             Code code
             if (statement instanceof ExpressionStatement) {
                 Expression expression = (statement as ExpressionStatement).getExpression()
-                code = expressionCode(expression)
+                code = expressionCode(expression, node.getDeclaringClass())
             } else {
                 code = new UnknownCode()
             }

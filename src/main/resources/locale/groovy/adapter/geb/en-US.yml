@@ -1,0 +1,3 @@
+method:
+  geb.Browser.go:
+    String: go to the page '{0}'

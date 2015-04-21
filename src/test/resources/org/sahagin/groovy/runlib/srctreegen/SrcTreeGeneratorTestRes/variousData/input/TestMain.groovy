@@ -1,11 +1,14 @@
 package org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorTestRes.variousData.input
 
 import org.junit.Test
+import geb.junit4.GebTest
 
-class TestMain {
+class TestMain extends GebTest {
 
     @Test
     void test3() {
+        go("http")
+
         TestSub s = new TestSub()
         s.sub()
         println 'ABC'
