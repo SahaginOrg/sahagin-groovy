@@ -74,13 +74,15 @@ public class GebAdapter implements Adapter {
         @Override
         public void classAdd() {
             // delegate setting
-            classAdd("geb.testng.GebTest", "geb.Browser")
+            classAdd("geb.junit3.GebTest", "geb.Browser")
+            classAdd("geb.junit4.GebTest", "geb.Browser")
+            classAdd("geb.testnggm.GebTest", "geb.Browser")
         }
 
         @Override
         public void methodAdd() {
             // in alphabetical order
-            methodAdd("geb.Browser", "go")
+            methodAdd("geb.Browser", "go", "String")
         }
 
     }
