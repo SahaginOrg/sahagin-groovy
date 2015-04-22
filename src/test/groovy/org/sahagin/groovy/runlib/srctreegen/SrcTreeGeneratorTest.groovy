@@ -4,6 +4,7 @@ import org.sahagin.groovy.runlib.external.adapter.geb.GebAdapter
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGenerator
 import org.sahagin.report.HtmlReport
 import org.sahagin.runlib.external.adapter.AdapterContainer
+import org.sahagin.runlib.external.Locale
 import org.sahagin.share.AcceptableLocales
 import org.sahagin.share.SysMessages
 import org.sahagin.share.srctree.SrcTree
@@ -16,7 +17,7 @@ class SrcTreeGeneratorTest {
     void variousData() {
 
         AdapterContainer.globalInitialize(
-                AcceptableLocales.getInstance(null), "junit4")
+                AcceptableLocales.getInstance(Locale.JA_JP), "junit4")
         SysMessages.globalInitialize(AcceptableLocales.getInstance(null))
         new GebAdapter().initialSetAdapter()
 

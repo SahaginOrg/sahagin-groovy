@@ -89,7 +89,7 @@ class SrcTreeGenerator {
 
         CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
             rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(), utils)
+            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(), delegationMap, utils)
         for (SourceUnit src : sources) {
             codeVisitor.setSrcUnit(src)
             for (ClassNode classNode : src.getAST().getClasses()) {

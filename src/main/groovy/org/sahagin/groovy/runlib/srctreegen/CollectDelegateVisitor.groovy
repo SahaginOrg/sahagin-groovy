@@ -78,13 +78,14 @@ class CollectDelegateVisitor {
     Map<ClassNode, ClassNode> finalizeVisitor() {
         Map<ClassNode, ClassNode> delegationMap =
         new HashMap<ClassNode, ClassNode>(testClassesHavingDelegationTo.size())
+       /*
         for (TestClass testClass : testClassesHavingDelegationTo) {
             ClassNode keyNode = getClassNode(
                 testClass.getQualifiedName(), classNodesRelatedToDelegation)
             ClassNode valueNode = getClassNode(
                 testClass.getDelegateToTestClassKey(), classNodesRelatedToDelegation)
             delegationMap.put(testClass, testClass)
-        }
+        }*/
         return delegationMap
     }
 }
