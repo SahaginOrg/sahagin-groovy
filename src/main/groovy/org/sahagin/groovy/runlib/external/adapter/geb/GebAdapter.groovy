@@ -77,14 +77,17 @@ public class GebAdapter implements Adapter {
             classAdd("geb.junit3.GebTest", "geb.Browser")
             classAdd("geb.junit4.GebTest", "geb.Browser")
             classAdd("geb.testnggm.GebTest", "geb.Browser")
+            classAdd("geb.Browser", "geb.Page")
         }
 
         @Override
         public void methodAdd() {
             // in alphabetical order
             methodAdd("geb.Browser", "go", "String")
+            methodAdd("geb.navigator.Navigator", "click")
+            methodAdd("geb.navigator.Navigator", "value", "Object")
+            methodAdd("geb.Page", '$', "String")
         }
-
     }
 
 }

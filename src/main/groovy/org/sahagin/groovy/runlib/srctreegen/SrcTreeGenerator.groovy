@@ -1,6 +1,8 @@
 package org.sahagin.groovy.runlib.srctreegen
 
+import java.util.Map
 import java.util.regex.Pattern
+
 import org.apache.commons.io.FileUtils
 import org.codehaus.groovy.antlr.AntlrASTProcessSnippets
 import org.codehaus.groovy.antlr.AntlrParserPlugin
@@ -74,6 +76,16 @@ class SrcTreeGenerator {
             rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
             rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable())
         setter.set(additionalTestDocs)
+
+        CollectDelegateVisitor delegateVisitor = new CollectDelegateVisitor(
+            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable())
+        delegateVisitor.initializeVisitor()
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                delegateVisitor.visitClass(classNode)
+            }
+        }
+        Map<ClassNode, ClassNode> delegationMap = delegateVisitor.finalizeVisitor()
 
         CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
             rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),

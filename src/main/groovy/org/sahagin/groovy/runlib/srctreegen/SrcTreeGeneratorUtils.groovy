@@ -17,6 +17,8 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.srctreegen.ASTUtils
+import org.sahagin.share.srctree.TestClass
+import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.runlib.external.TestDoc
 
@@ -27,7 +29,24 @@ class SrcTreeGeneratorUtils {
         this.additionalTestDocs = additionalTestDocs
     }
 
-    private List<String> getArgClassQualifiedNames(MethodNode method) {
+    static TestClass getTestClass(String classQualifiedName,
+            TestClassTable rootClassTable, TestClassTable subClassTable) {
+        if (classQualifiedName == null) {
+            return null
+        }
+
+        TestClass testClass = subClassTable.getByKey(classQualifiedName)
+        if (testClass != null) {
+            return testClass
+        }
+        testClass = rootClassTable.getByKey(classQualifiedName)
+        if (testClass != null) {
+            return testClass
+        }
+        return null
+    }
+
+    private static List<String> getArgClassQualifiedNames(MethodNode method) {
         // TODO parameterized etc
 
         List<String> result = new ArrayList<String>(method.getParameters().length)
@@ -37,7 +56,7 @@ class SrcTreeGeneratorUtils {
         return result
     }
 
-    String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
+    static String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
         String classQualifiedName = method.getDeclaringClass().getName()
         String methodSimpleName = method.getName()
         List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
@@ -49,7 +68,7 @@ class SrcTreeGeneratorUtils {
         }
     }
 
-    private List<String> getArgClassQualifiedNames(ArgumentListExpression argumentList) {
+    private static List<String> getArgClassQualifiedNames(ArgumentListExpression argumentList) {
         // TODO parameterized etc
 
         List<String> result = new ArrayList<String>(argumentList.getExpressions().size())
@@ -59,20 +78,20 @@ class SrcTreeGeneratorUtils {
         return result
     }
 
-    String generateMethodKey(String classQualifiedName, String methodAsString,
-        ArgumentListExpression argumentList, boolean noArgClassesStr) {
+    static String generateMethodKey(String classQualifiedName, String methodAsString,
+            ArgumentListExpression argumentList, boolean noArgClassesStr) {
         // TODO if fails to infer class type??
         List<String> argClassQualifiedNames = getArgClassQualifiedNames(argumentList)
         if (noArgClassesStr) {
             return TestMethod.generateMethodKey(classQualifiedName, methodAsString)
         } else {
             return TestMethod.generateMethodKey(
-                classQualifiedName, methodAsString, argClassQualifiedNames)
+                    classQualifiedName, methodAsString, argClassQualifiedNames)
         }
     }
 
     // TODO move this logic to adapter
-    boolean isRootMethod(MethodNode node) {
+    static boolean isRootMethod(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
         if (annotations == null) {
             return false
@@ -87,7 +106,7 @@ class SrcTreeGeneratorUtils {
     }
 
     // TODO captureStyle, lang, TestDocs, etc
-    private String getTestDocFromAnnotation(MethodNode node) {
+    private static String getTestDocFromAnnotation(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations
         if (annotations == null) {
             return null

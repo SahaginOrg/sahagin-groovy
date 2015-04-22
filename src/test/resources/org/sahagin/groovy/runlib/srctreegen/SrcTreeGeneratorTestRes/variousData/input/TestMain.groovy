@@ -8,6 +8,8 @@ class TestMain extends GebTest {
     @Test
     void test3() {
         go("http")
+        $("#reserve_y").value("2014")
+        $("#goto_next").click()
 
         TestSub s = new TestSub()
         s.sub()

@@ -1,3 +1,8 @@
 method:
   geb.Browser.go:
-    String: 「{0}」にページ遷移  
+    String: 「{0}」にページ遷移
+  geb.navigator.Navigator.click: "{this}をクリック"
+  geb.navigator.Navigator.value:
+    Object: "{this}に「{0}」をセット"
+  geb.Page.$:
+    String: 要素「{0}」
