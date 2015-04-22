@@ -65,16 +65,16 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     private TestMethod getTestMethod(ClassNode classNode,
-            String methodAsString, ArgumentListExpression argumentList) {
+            String methodAsString, List<ClassNode> argClasses) {
         // TODO argumentList type maybe super type of actual method argument type..
-        TestMethod testMethod = subMethodTable.getByKey(utils.generateMethodKey(
-            classNode.getName(), methodAsString, argumentList, false))
+        TestMethod testMethod = subMethodTable.getByKey(SrcTreeGeneratorUtils.generateMethodKey(
+            classNode.getName(), methodAsString, argClasses, false))
         if (testMethod != null) {
             return testMethod
         }
         // TODO argumentList type maybe super type of actual method argument type..
         testMethod = subMethodTable.getByKey(SrcTreeGeneratorUtils.generateMethodKey(
-                classNode.getName(), methodAsString, argumentList, true))
+                classNode.getName(), methodAsString, argClasses, true))
         if (testMethod != null) {
             return testMethod
         }
@@ -83,18 +83,18 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // TODO should get actual type for argumentList
     private MethodNode getMethodNode(ClassNode classNode,
-        String methodAsString, ArgumentListExpression argumentList) {
-        Parameter[] params = new Parameter[argumentList.getExpressions().size()]
-        for (int i = 0; i < argumentList.getExpressions().size(); i++) {
-            params[i] = new Parameter(argumentList.getExpression(i).getType(), "dummy" + i)
+        String methodAsString, List<ClassNode> argClasses) {
+        Parameter[] params = new Parameter[argClasses.size()]
+        for (int i = 0; i < argClasses.size(); i++) {
+            params[i] = new Parameter(argClasses.get(i), "dummy" + i)
         }
         return classNode.getDeclaredMethod(methodAsString, params)
     }
 
     private def getTestMethodAndMethodNode(ClassNode classNode,
-            String methodAsString, ArgumentListExpression argumentList) {
-        TestMethod testMethod = getTestMethod(classNode, methodAsString, argumentList)
-        MethodNode methodNode = getMethodNode(classNode, methodAsString, argumentList)
+            String methodAsString, List<ClassNode> argClasses) {
+        TestMethod testMethod = getTestMethod(classNode, methodAsString, argClasses)
+        MethodNode methodNode = getMethodNode(classNode, methodAsString, argClasses)
         return [testMethod, methodNode]
     }
 
@@ -120,7 +120,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns (TestMethod, MethodNode, isSuper)
     // - if delegate is true, check only delegateTo class
     private def getThisOrSuperMethodSub(ClassNode classNode,
-            String methodAsString, ArgumentListExpression argumentList, boolean delegate) {
+            String methodAsString, List<ClassNode> argClasses, boolean delegate) {
         ClassNode parentNode = classNode
         while (parentNode != null) {
             ClassNode searchClassNode
@@ -130,7 +130,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     TestMethod testMethod
                     MethodNode methodNode
                     (testMethod, methodNode) = getTestMethodAndMethodNode(
-                            delegateToClassNode, methodAsString, argumentList)
+                            delegateToClassNode, methodAsString, argClasses)
                     if (methodNode != null) {
                         return [testMethod, methodNode, parentNode != classNode]
                     }
@@ -140,7 +140,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 TestMethod testMethod
                 MethodNode methodNode
                 (testMethod, methodNode) = getTestMethodAndMethodNode(
-                        parentNode, methodAsString, argumentList)
+                        parentNode, methodAsString, argClasses)
                 if (methodNode != null) {
                     return [testMethod, methodNode, parentNode != classNode]
                 }
@@ -152,21 +152,21 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // returns (TestMethod, MethodNode, isSuper)
     private def getThisOrSuperTestMethod(ClassNode classNode,
-            String methodAsString, ArgumentListExpression argumentList) {
+            String methodAsString, List<ClassNode> argClasses) {
         TestMethod invocationMethod
         MethodNode invocationMethodNode
         boolean isSuper
 
         // check this class and super class
         (invocationMethod, invocationMethodNode, isSuper) = getThisOrSuperMethodSub(
-            classNode, methodAsString, argumentList, false)
+            classNode, methodAsString, argClasses, false)
         if (invocationMethod != null) {
             return [invocationMethod, invocationMethodNode, isSuper]
         }
 
         // check only delegateTo class for this class and super class
         (invocationMethod, invocationMethodNode, isSuper) = getThisOrSuperMethodSub(
-            classNode, methodAsString, argumentList, true)
+            classNode, methodAsString, argClasses, true)
         if (invocationMethod != null) {
             return [invocationMethod, invocationMethodNode, isSuper]
         }
@@ -194,12 +194,21 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
         }
         ArgumentListExpression argumentList = arguments as ArgumentListExpression
+        List<Code> argCodes = new ArrayList<Code>(argumentList.getExpressions().size())
+        List<ClassNode> argClasses = new ArrayList<ClassNode>(argumentList.getExpressions().size())
+        for (Expression argExpression : argumentList.getExpressions()) {
+            Code argCode
+            ClassNode argClass
+            (argCode, argClass) = expressionCode(argExpression, thisClassNode)
+            argCodes.add(argCode)
+            argClasses.add(argClass)
+        }
 
         TestMethod invocationMethod
         MethodNode invocationMethodNode
         boolean isSuper
         (invocationMethod, invocationMethodNode, isSuper) =
-                getThisOrSuperTestMethod(receiverClassNode, methodAsString, argumentList)
+                getThisOrSuperTestMethod(receiverClassNode, methodAsString, argClasses)
         if (invocationMethod == null || invocationMethodNode == null) {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
         }
@@ -210,8 +219,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         // TODO null thisInstance especially for constructor
         assert receiverExpression != null
         subMethodInvoke.setThisInstance(receiverCode)
-        for (Expression argExpression : argumentList.getExpressions()) {
-            Code argCode = expressionCode(argExpression, thisClassNode).first()
+        for (Code argCode : argCodes) {
             subMethodInvoke.addArg(argCode)
         }
         subMethodInvoke.setChildInvoke(isSuper)

@@ -68,20 +68,20 @@ class SrcTreeGeneratorUtils {
         }
     }
 
-    private static List<String> getArgClassQualifiedNames(ArgumentListExpression argumentList) {
+    private static List<String> getArgClassQualifiedNames(List<ClassNode> argClasses) {
         // TODO parameterized etc
 
-        List<String> result = new ArrayList<String>(argumentList.getExpressions().size())
-        for (Expression argument : argumentList.getExpressions()) {
-            result.add(argument.getType().getName())
+        List<String> result = new ArrayList<String>(argClasses.size())
+        for (ClassNode argClass : argClasses) {
+            result.add(argClass.getName())
         }
         return result
     }
 
     static String generateMethodKey(String classQualifiedName, String methodAsString,
-            ArgumentListExpression argumentList, boolean noArgClassesStr) {
+        List<ClassNode> argClasses, boolean noArgClassesStr) {
         // TODO if fails to infer class type??
-        List<String> argClassQualifiedNames = getArgClassQualifiedNames(argumentList)
+        List<String> argClassQualifiedNames = getArgClassQualifiedNames(argClasses)
         if (noArgClassesStr) {
             return TestMethod.generateMethodKey(classQualifiedName, methodAsString)
         } else {
