@@ -43,18 +43,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private TestClassTable subClassTable
     private TestMethodTable rootMethodTable
     private TestMethodTable subMethodTable
-    private Map<ClassNode, ClassNode> delegationMap
     private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
 
     CollectCodeVisitor(TestClassTable rootClassTable, TestClassTable subClassTable,
-        TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
-        Map<ClassNode, ClassNode> delegationMap, SrcTreeGeneratorUtils utils) {
+        TestMethodTable rootMethodTable, TestMethodTable subMethodTable, SrcTreeGeneratorUtils utils) {
         this.rootClassTable = rootClassTable
         this.subClassTable = subClassTable
         this.rootMethodTable = rootMethodTable
         this.subMethodTable = subMethodTable
-        this.delegationMap = delegationMap
         this.utils = utils
     }
 

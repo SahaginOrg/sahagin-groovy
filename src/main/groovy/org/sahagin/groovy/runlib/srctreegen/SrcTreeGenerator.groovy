@@ -77,19 +77,13 @@ class SrcTreeGenerator {
             rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable())
         setter.set(additionalTestDocs)
 
-        CollectDelegateVisitor delegateVisitor = new CollectDelegateVisitor(
+        DelegateResolver delegateResolver = new DelegateResolver(
             rootVisitor.getRootClassTable(), subVisitor.getSubClassTable())
-        delegateVisitor.initializeVisitor()
-        for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
-                delegateVisitor.visitClass(classNode)
-            }
-        }
-        Map<ClassNode, ClassNode> delegationMap = delegateVisitor.finalizeVisitor()
+        delegateResolver.resolve()
 
         CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
             rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(), delegationMap, utils)
+            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(), utils)
         for (SourceUnit src : sources) {
             codeVisitor.setSrcUnit(src)
             for (ClassNode classNode : src.getAST().getClasses()) {
