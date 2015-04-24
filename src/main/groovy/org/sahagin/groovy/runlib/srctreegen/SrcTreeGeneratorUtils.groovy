@@ -2,6 +2,7 @@ package org.sahagin.groovy.runlib.srctreegen
 
 import java.util.List
 
+import org.apache.bcel.generic.RETURN
 import org.apache.commons.lang3.tuple.Pair
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -46,18 +47,26 @@ class SrcTreeGeneratorUtils {
         return null
     }
 
+    private static String getClassQualifiedName(ClassNode classNode) {
+        if (classNode.isArray()) {
+            return getClassQualifiedName(classNode.getComponentType()) + "[]"
+        } else {
+            return classNode.getName()
+        }
+    }
+
     private static List<String> getArgClassQualifiedNames(MethodNode method) {
         // TODO parameterized etc
 
         List<String> result = new ArrayList<String>(method.getParameters().length)
         for (Parameter param : method.getParameters()) {
-            result.add(param.getOriginType().getName()) // TODO getOriginType or getType?
+            result.add(getClassQualifiedName(param.getType()))
         }
         return result
     }
 
     static String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
-        String classQualifiedName = method.getDeclaringClass().getName()
+        String classQualifiedName = getClassQualifiedName(method.getDeclaringClass())
         String methodSimpleName = method.getName()
         List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
         if (noArgClassesStr) {
@@ -111,7 +120,8 @@ class SrcTreeGeneratorUtils {
 
         List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
         AdditionalMethodTestDoc additional = additionalTestDocs.getMethodTestDoc(
-                method.getDeclaringClass().getName(), method.getName(), argClassQualifiedNames)
+            getClassQualifiedName(method.getDeclaringClass()),
+            method.getName(), argClassQualifiedNames)
         if (additional != null) {
             return additional.getTestDoc()
         }

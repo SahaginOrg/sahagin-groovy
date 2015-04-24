@@ -15,6 +15,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
@@ -70,16 +71,47 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         ClassNode parentNode = classNode
         while (parentNode != null) {
             for (MethodNode method : parentNode.getDeclaredMethods(methodName)) {
-                if (method.getParameters().length != argClasses.size()) {
+                Parameter[] params = method.getParameters()
+                boolean isVarLengthArg = false
+                int nonVarLengthMaxIndex = params.length - 1
+                ClassNode varLengthArgType = null
+                if (params.length != 0) {
+                    ClassNode lastArgType = params[params.length - 1].getType()
+                    if (lastArgType.isArray()) {
+                        // last array argument is handled as variable length argument
+                        isVarLengthArg = true
+                        nonVarLengthMaxIndex = params.length - 2
+                        varLengthArgType = lastArgType.getComponentType()
+                    }
+                }
+
+                if (nonVarLengthMaxIndex > argClasses.size() - 1) {
                     continue // go to next method
                 }
+
                 boolean matched = true
-                for (int i = 0; i < argClasses.size(); i++) {
-                    if (!argClasses.get(i).isDerivedFrom(method.getParameters()[i].getType())) {
+
+                for (int i = 0; i <= nonVarLengthMaxIndex; i++) {
+                    if (!argClasses.get(i).isDerivedFrom(params[i].getType())) {
                         matched = false
                         break // quit argument type checking
                     }
                 }
+                if (!matched) {
+                    continue // non variable length argument does not match
+                }
+                if (isVarLengthArg) {
+                    for (int i = nonVarLengthMaxIndex + 1; i < argClasses.size(); i++) {
+                        if (!argClasses.get(i).isDerivedFrom(varLengthArgType)) {
+                            matched = false
+                            break // quit argument type checking
+                        }
+                        if (!matched) {
+                            continue // non variable length argument does not match
+                        }
+                    }
+                }
+
                 if (matched) {
                     return method
                 }
@@ -92,7 +124,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private static TestMethod getTestMethod(MethodNode methodNode, TestMethodTable methodTable) {
         // TODO searching twice from table is not elegant logic..
         TestMethod testMethod = methodTable.getByKey(
-        SrcTreeGeneratorUtils.generateMethodKey(methodNode, false))
+                SrcTreeGeneratorUtils.generateMethodKey(methodNode, false))
         if (testMethod != null) {
             return testMethod
         }
@@ -114,7 +146,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode getDelegateToClassNode(ClassNode classNode) {
         TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
-            classNode.getName(), rootClassTable, subClassTable)
+            SrcTreeGeneratorUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
         if (testClass == null) {
             return null
         }
@@ -233,7 +265,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             subMethodInvoke.addArg(argCode)
         }
         subMethodInvoke.setChildInvoke(
-            invocationMethodNode.getDeclaringClass().getName() != receiverClassNode.getName())
+            SrcTreeGeneratorUtils.getClassQualifiedName(invocationMethodNode.getDeclaringClass()) !=
+            SrcTreeGeneratorUtils.getClassQualifiedName(receiverClassNode))
         subMethodInvoke.setOriginal(original)
         return [subMethodInvoke, invocationMethodNode.getReturnType()]
     }
@@ -300,6 +333,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             // this keyword
             Code code = generateUnknownCode(expression).first()
             return [code, thisClassNode]
+        } else if (expression instanceof ClassExpression) {
+            ClassExpression classExp = expression as ClassExpression
+            return generateUnknownCode(expression.getText(), ClassHelper.CLASS_Type)
         } else {
             // TODO local var, arg ref, etc
             return generateUnknownCode(expression)
@@ -318,7 +354,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return
         }
 
-        BlockStatement body = (BlockStatement) node.getCode()
+        if (!(node.getCode() instanceof BlockStatement)) {
+            super.visitMethod(node)
+            return
+        }
+        BlockStatement body = node.getCode() as BlockStatement
         if (body == null) {
             // no body. Maybe abstract method or interface method
             super.visitMethod(node)

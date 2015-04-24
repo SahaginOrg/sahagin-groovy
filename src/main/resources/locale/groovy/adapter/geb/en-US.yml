@@ -1,6 +1,8 @@
 method:
   geb.Browser.go:
     String: go to the page '{0}'
+  geb.Browser.to:
+    java.lang.Class,Object[]: go to the page '{0}'
   geb.navigator.Navigator.click: click {this}
   geb.navigator.Navigator.value:
     Object: set value '{0}' to {this}

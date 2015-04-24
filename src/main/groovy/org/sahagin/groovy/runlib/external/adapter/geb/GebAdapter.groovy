@@ -84,6 +84,7 @@ public class GebAdapter implements Adapter {
         public void methodAdd() {
             // in alphabetical order
             methodAdd("geb.Browser", "go", "String")
+            methodAdd("geb.Browser", "to", "java.lang.Class,Object[]", 1)
             methodAdd("geb.navigator.Navigator", "click")
             methodAdd("geb.navigator.Navigator", "value", "Object")
             methodAdd("geb.Page", '$', "String")

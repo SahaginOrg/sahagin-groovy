@@ -49,15 +49,15 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
 
         // TODO enum etc
         ClassNode classNode = node.getDeclaringClass()
-
-        TestClass testClass = rootClassTable.getByKey(classNode.getName())
+        String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
+        TestClass testClass = rootClassTable.getByKey(classQName)
         if (testClass == null) {
-            testClass = subClassTable.getByKey(classNode.getName())
+            testClass = subClassTable.getByKey(classQName)
             if (testClass == null) {
                 // TODO testDoc handling
                 testClass = new TestClass()
-                testClass.setKey(classNode.getName())
-                testClass.setQualifiedName(classNode.getName())
+                testClass.setKey(classQName)
+                testClass.setQualifiedName(classQName)
                 testClass.setTestDoc("")
                 subClassTable.addTestClass(testClass)
             }

@@ -48,12 +48,12 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
         // TODO enum etc
         ClassNode classNode = node.getDeclaringClass()
-
-        TestClass rootClass = rootClassTable.getByKey(classNode.getName())
+        String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
+        TestClass rootClass = rootClassTable.getByKey(classQName)
         if (rootClass == null) {
             rootClass = new TestClass()
-            rootClass.setKey(classNode.getName())
-            rootClass.setQualifiedName(classNode.getName())
+            rootClass.setKey(classQName)
+            rootClass.setQualifiedName(classQName)
             // TODO testDoc, captureStyle, TestDocs, etc
             rootClass.setTestDoc("")
             rootClassTable.addTestClass(rootClass)
