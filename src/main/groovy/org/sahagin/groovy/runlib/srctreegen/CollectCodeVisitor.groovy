@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
@@ -220,14 +221,19 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // return [Code, ClassNode]
     private def generateMethodInvokeCode(ASTNode receiver,
             String methodAsString, Expression arguments, String original, ClassNode thisClassNode) {
-        // TODO receiver may be null for constructor..
-        if (!(receiver instanceof Expression)) {
-            return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
-        }
-        Expression receiverExpression = receiver as Expression
         Code receiverCode
         ClassNode receiverClassNode
-        (receiverCode, receiverClassNode) = expressionCode(receiverExpression, thisClassNode)
+        if (receiver instanceof ClassNode) {
+            // static method call
+            receiverClassNode = receiver as ClassNode
+            receiverCode = generateUnknownCode(
+                receiverClassNode.getNameWithoutPackage(), receiverClassNode).first()
+        } else if (receiver instanceof Expression) {
+            (receiverCode, receiverClassNode) = expressionCode(receiver as Expression, thisClassNode)
+        } else {
+            // TODO receiver may be null for constructor..
+            return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
+        }
 
         if (methodAsString == null || methodAsString == "") {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
@@ -259,7 +265,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         subMethodInvoke.setSubMethodKey(invocationMethod.getKey())
         subMethodInvoke.setSubMethod(invocationMethod)
         // TODO null thisInstance especially for constructor
-        assert receiverExpression != null
+        assert receiverCode != null
         subMethodInvoke.setThisInstance(receiverCode)
         for (Code argCode : argCodes) {
             subMethodInvoke.addArg(argCode)
@@ -321,13 +327,18 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             // TODO TestStepLabel handling
             MethodCallExpression methodCall = expression as MethodCallExpression
             return generateMethodInvokeCode(methodCall.getReceiver(),
-                methodCall.getMethodAsString(), methodCall.getArguments(),
-                methodCall.getText(), thisClassNode)
+                    methodCall.getMethodAsString(), methodCall.getArguments(),
+                    methodCall.getText(), thisClassNode)
+        } else if (expression instanceof StaticMethodCallExpression) {
+            StaticMethodCallExpression methodCall = expression as StaticMethodCallExpression
+            return generateMethodInvokeCode(methodCall.getReceiver(),
+                    methodCall.getMethodAsString(), methodCall.getArguments(),
+                    methodCall.getText(), thisClassNode)
         } else if (expression instanceof ConstructorCallExpression) {
             ConstructorCallExpression constructorCall = expression as ConstructorCallExpression
             return generateMethodInvokeCode(constructorCall.getReceiver(),
-                constructorCall.getMethodAsString(), constructorCall.getArguments(),
-                constructorCall.getText(), thisClassNode)
+                    constructorCall.getMethodAsString(), constructorCall.getArguments(),
+                    constructorCall.getText(), thisClassNode)
         } else if ((expression instanceof VariableExpression) &&
             ((expression as VariableExpression).getName() == "this")) {
             // this keyword
