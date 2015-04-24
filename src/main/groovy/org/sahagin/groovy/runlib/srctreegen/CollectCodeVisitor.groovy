@@ -335,7 +335,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return [code, thisClassNode]
         } else if (expression instanceof ClassExpression) {
             ClassExpression classExp = expression as ClassExpression
-            return generateUnknownCode(expression.getText(), ClassHelper.CLASS_Type)
+            // TODO getting original text. this logic is not elegant logic..
+            return generateUnknownCode(
+                expression.getType().getNameWithoutPackage(),  ClassHelper.CLASS_Type)
         } else {
             // TODO local var, arg ref, etc
             return generateUnknownCode(expression)
