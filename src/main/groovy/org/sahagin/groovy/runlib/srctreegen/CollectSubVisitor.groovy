@@ -65,11 +65,7 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
         if (testClass == null) {
             testClass = subClassTable.getByKey(classQName)
             if (testClass == null) {
-                // TODO testDoc handling
-                testClass = new TestClass()
-                testClass.setKey(classQName)
-                testClass.setQualifiedName(classQName)
-                testClass.setTestDoc("")
+                testClass = utils.generateTestClass(classNode)
                 subClassTable.addTestClass(testClass)
             }
         }

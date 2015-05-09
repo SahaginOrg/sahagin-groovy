@@ -16,13 +16,16 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
+import org.sahagin.runlib.additionaltestdoc.AdditionalPage
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.srctreegen.ASTUtils
+import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.runlib.external.TestDoc
+import org.sahagin.runlib.external.Page
 
 class SrcTreeGeneratorUtils {
     private AdditionalTestDocs additionalTestDocs
@@ -98,13 +101,14 @@ class SrcTreeGeneratorUtils {
     }
 
     // TODO captureStyle, lang, TestDocs, etc
-    private static String getTestDocFromAnnotation(List<AnnotationNode> annotations) {
+    private static String getAnnotationValue(
+        List<AnnotationNode> annotations, Class<?> annotationClass) {
         if (annotations == null) {
             return null
         }
         for (AnnotationNode annotation : annotations) {
             ClassNode classNode = annotation.getClassNode()
-            if (classNode.name == TestDoc.class.getCanonicalName()) {
+            if (classNode.name == annotationClass.getCanonicalName()) {
                 Expression valueNode = annotation.getMember("value")
                 assert valueNode != null
                 assert valueNode instanceof ConstantExpression
@@ -114,10 +118,33 @@ class SrcTreeGeneratorUtils {
         return null
     }
 
+    // returns [testDoc, isPage (boolean value)]
+    def getClassTestDoc(ClassNode classNode) {
+        // TODO additional TestDoc should be prior to annotation TestDoc !?
+        // TODO Pages, TestDocs
+        String pageTestDoc = getAnnotationValue(
+            classNode.getAnnotations(), Page.class)
+        if (pageTestDoc != null) {
+            return [pageTestDoc, true]
+        }
+        String testDoc = getAnnotationValue(
+            classNode.getAnnotations(), TestDoc.class)
+        if (testDoc != null) {
+            return testDoc
+        }
+        AdditionalMethodTestDoc additional =
+        additionalTestDocs.getClassTestDoc(getClassQualifiedName(classNode))
+        if (additional != null) {
+            return [additional.getTestDoc(), additional instanceof AdditionalPage]
+        }
+        return [null, false]
+    }
+
     // TODO captureStyle, lang, TestDocs, etc
     String getMethodTestDoc(MethodNode method) {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
-        String annotationTestDoc = getTestDocFromAnnotation(method.getAnnotations())
+        String annotationTestDoc = getAnnotationValue(
+            method.getAnnotations(), TestDoc.class)
         if (annotationTestDoc != null) {
             return annotationTestDoc
         }
@@ -134,7 +161,7 @@ class SrcTreeGeneratorUtils {
 
     String getFieldTestDoc(FieldNode field) {
         // TODO consider additional testDoc
-        return getTestDocFromAnnotation(field.getAnnotations())
+        return getAnnotationValue(field.getAnnotations(), TestDoc.class)
     }
 
     // TODO
@@ -143,6 +170,24 @@ class SrcTreeGeneratorUtils {
             return false
         }
         return getMethodTestDoc(node) != null
+    }
+
+    TestClass generateTestClass(ClassNode classNode) {
+        TestClass testClass
+        String testDoc
+        boolean isPage
+        (testDoc, isPage) = getClassTestDoc(classNode)
+        if (isPage) {
+            testClass = new PageClass()
+        } else {
+            testClass = new TestClass()
+        }
+        String classQName = getClassQualifiedName(classNode)
+        testClass.setKey(classQName)
+        testClass.setQualifiedName(classQName)
+        // TODO captureStyle, TestDocs, etc
+        testClass.setTestDoc(testDoc)
+        return testClass
     }
 
 }

@@ -51,11 +51,7 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
         String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
         TestClass rootClass = rootClassTable.getByKey(classQName)
         if (rootClass == null) {
-            rootClass = new TestClass()
-            rootClass.setKey(classQName)
-            rootClass.setQualifiedName(classQName)
-            // TODO testDoc, captureStyle, TestDocs, etc
-            rootClass.setTestDoc("")
+            rootClass = utils.generateTestClass(classNode)
             rootClassTable.addTestClass(rootClass)
         }
 
