@@ -78,6 +78,10 @@ class SrcTreeGeneratorUtils {
         }
     }
 
+    static String generateFieldKey(ClassNode propClassNode, String propName) {
+        return getClassQualifiedName(propClassNode) + "." + propName
+    }
+
     // TODO move this logic to adapter
     static boolean isRootMethod(MethodNode node) {
         List<AnnotationNode> annotations = node.annotations

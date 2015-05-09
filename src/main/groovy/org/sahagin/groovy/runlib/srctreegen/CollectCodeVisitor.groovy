@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
@@ -33,14 +34,17 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
+import org.sahagin.share.srctree.TestField
 import org.sahagin.share.srctree.TestFieldTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.share.srctree.code.Code
 import org.sahagin.share.srctree.code.CodeLine
+import org.sahagin.share.srctree.code.Field
 import org.sahagin.share.srctree.code.StringCode
 import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.sahagin.share.srctree.code.UnknownCode
+import org.sahagin.share.srctree.code.VarAssign
 
 class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private TestClassTable rootClassTable
@@ -168,7 +172,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return ClassHelper.make(delegateToClass)
     }
 
-    // returns (TestMethod, MethodNode)
+    // returns [TestMethod, MethodNode]
     // - if delegate is true, check only delegateTo class
     private def getThisOrSuperMethodSub(ClassNode classNode,
             String methodAsString, List<ClassNode> argClasses, boolean delegate) {
@@ -198,7 +202,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [null, null]
     }
 
-    // returns (TestMethod, MethodNode)
+    // returns [TestMethod, MethodNode]
     private def getThisOrSuperTestMethod(ClassNode classNode,
             String methodAsString, List<ClassNode> argClasses) {
         TestMethod invocationMethod
@@ -281,20 +285,51 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [subMethodInvoke, invocationMethodNode.getReturnType()]
     }
 
-    // returns (UnknownCode, ClassNode)
+    // returns [VarAssing, ClassNode]
+    private def generateVarAssignCode(Expression left, Expression right,
+        String original, ClassNode thisClassNode) {
+        Code leftCode = expressionCode(left, thisClassNode).first()
+        Code rightCode = expressionCode(right, thisClassNode).first()
+        VarAssign assign = new VarAssign()
+        assign.setOriginal(original)
+        assign.setVariable(leftCode)
+        assign.setValue(rightCode)
+        return [assign, ClassHelper.VOID_TYPE]
+    }
+
+    private def generateFieldCode(PropertyExpression property, ClassNode thisClassNode) {
+        Expression receiver = property.getObjectExpression()
+        Code receiverCode
+        ClassNode receiverClass
+        (receiverCode, receiverClass) = expressionCode(receiver, thisClassNode)
+        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(
+            receiverClass, property.getPropertyAsString())
+        TestField testField = fieldTable.getByKey(fieldKey)
+        if (testField == null) {
+            return generateUnknownCode(property)
+        }
+        Field field = new Field()
+        field.setFieldKey(testField.getKey())
+        field.setField(testField)
+        field.setThisInstance(receiverCode)
+        field.setOriginal(property.getText())
+        return [field, property.getType()] // TODO maybe getType always returns Object type
+    }
+
+    // returns [UnknownCode, ClassNode]
     private def generateUnknownCode(String original, ClassNode classNode) {
         UnknownCode unknownCode = new UnknownCode()
         unknownCode.setOriginal(original)
         return [unknownCode, classNode]
     }
 
-    // returns (UnknownCode, ClassNode)
+    // returns [UnknownCode, ClassNode]
     private def generateUnknownCode(Expression expression) {
         // TODO using getText is temporal logic
         return generateUnknownCode(expression.getText(), expression.getType())
     }
 
-    // returns (Code, ClassNode)
+    // returns [Code, ClassNode]
     def expressionCode(Expression expression, ClassNode thisClassNode) {
         if (expression == null) {
             StringCode strCode = new StringCode()
@@ -311,7 +346,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     || binary.getRightExpression() instanceof EmptyExpression) {
                     return generateUnknownCode(expression)
                 } else {
-                    return expressionCode(binary.getRightExpression(), thisClassNode)
+                    return generateVarAssignCode(binary.getLeftExpression(),
+                        binary.getRightExpression(), binary.getText(), thisClassNode)
                 }
             } else {
                 return generateUnknownCode(expression)
@@ -327,6 +363,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             } else {
                 return generateUnknownCode(expression)
             }
+        } else if (expression instanceof PropertyExpression) {
+            PropertyExpression property = expression as PropertyExpression
+            return generateFieldCode(property, thisClassNode)
         } else if (expression instanceof MethodCallExpression) {
             // TODO TestStepLabel handling
             MethodCallExpression methodCall = expression as MethodCallExpression

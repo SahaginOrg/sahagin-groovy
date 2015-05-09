@@ -18,12 +18,12 @@ class SrcTreeGeneratorTest {
 
         AdapterContainer.globalInitialize(
                 AcceptableLocales.getInstance(Locale.JA_JP), "junit4")
-        SysMessages.globalInitialize(AcceptableLocales.getInstance(null))
+        SysMessages.globalInitialize(AcceptableLocales.getInstance(Locale.JA_JP))
         new GebAdapter().initialSetAdapter()
 
         // TODO dummy
         SrcTreeGenerator gen = new SrcTreeGenerator(
-            AdapterContainer.globalInstance().getAdditionalTestDocs(), null)
+            AdapterContainer.globalInstance().getAdditionalTestDocs(), AcceptableLocales.getInstance(Locale.JA_JP))
         File rootDir = new File("src/test/resources/org/sahagin/groovy/runlib/srctreegen/SrcTreeGeneratorTestRes/variousData/input")
         SrcTree srcTree = gen.generateWithRuntimeClassPath(rootDir)
         YamlUtils.dump(srcTree.toYamlObject(), new File("report-in/srcTree"))
