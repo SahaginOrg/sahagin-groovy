@@ -12,6 +12,7 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.CompileUnit
+import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.builder.AstBuilder
@@ -54,7 +55,6 @@ class SrcTreeGenerator {
         compilation.addSources(srcFiles)
         compilation.compile()
         Collection<SourceUnit> sources = compilation.sources.values()
-
         SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
 
         CollectRootVisitor rootVisitor = new CollectRootVisitor(utils)
@@ -63,11 +63,23 @@ class SrcTreeGenerator {
                 classNode.visitContents(rootVisitor)
             }
         }
+
         CollectSubVisitor subVisitor = new CollectSubVisitor(
             rootVisitor.getRootClassTable(), utils)
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(subVisitor)
+            }
+        }
+
+        CollectGebPageContentVisitor gebVisitor = new CollectGebPageContentVisitor(
+            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
+            subVisitor.getFieldTable(), utils)
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                if (gebVisitor.needsVisit(classNode)) {
+                    classNode.visitContents(gebVisitor)
+                }
             }
         }
 
@@ -83,7 +95,8 @@ class SrcTreeGenerator {
 
         CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
             rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(), utils)
+            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
+            subVisitor.getFieldTable(), utils)
         for (SourceUnit src : sources) {
             codeVisitor.setSrcUnit(src)
             for (ClassNode classNode : src.getAST().getClasses()) {
@@ -96,6 +109,7 @@ class SrcTreeGenerator {
         result.setSubClassTable(subVisitor.getSubClassTable())
         result.setRootMethodTable(rootVisitor.getRootMethodTable())
         result.setSubMethodTable(subVisitor.getSubMethodTable())
+        result.setFieldTable(subVisitor.getFieldTable())
         return result
     }
 

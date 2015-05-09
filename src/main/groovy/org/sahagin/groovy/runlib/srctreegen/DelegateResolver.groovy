@@ -8,6 +8,7 @@ import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethodTable
 
+// resolve all delegationToTestClass in class tables
 class DelegateResolver {
     private TestClassTable rootClassTable
     private TestClassTable subClassTable

@@ -33,6 +33,7 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
+import org.sahagin.share.srctree.TestFieldTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.share.srctree.code.Code
@@ -46,15 +47,18 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private TestClassTable subClassTable
     private TestMethodTable rootMethodTable
     private TestMethodTable subMethodTable
+    private TestFieldTable fieldTable
     private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
 
     CollectCodeVisitor(TestClassTable rootClassTable, TestClassTable subClassTable,
-        TestMethodTable rootMethodTable, TestMethodTable subMethodTable, SrcTreeGeneratorUtils utils) {
+        TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
+        TestFieldTable fieldTable, SrcTreeGeneratorUtils utils) {
         this.rootClassTable = rootClassTable
         this.subClassTable = subClassTable
         this.rootMethodTable = rootMethodTable
         this.subMethodTable = subMethodTable
+        this.fieldTable = fieldTable
         this.utils = utils
     }
 

@@ -16,7 +16,7 @@ configurations.all {
 dependencies {
   compile "org.codehaus.groovy:groovy-all:2.4.1"
   compile "org.gebish:geb-core:0.10.0"
-  compile "org.sahagin:sahagin:0.8-SNAPSHOT"
+  compile "org.sahagin:sahagin:0.9-SNAPSHOT"
   testCompile "junit:junit:4.12"
   testCompile "org.gebish:geb-junit4:0.10.0"
 }

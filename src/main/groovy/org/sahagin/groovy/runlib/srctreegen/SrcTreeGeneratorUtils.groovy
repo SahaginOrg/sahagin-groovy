@@ -7,6 +7,7 @@ import org.apache.commons.lang3.tuple.Pair
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -93,8 +94,7 @@ class SrcTreeGeneratorUtils {
     }
 
     // TODO captureStyle, lang, TestDocs, etc
-    private static String getTestDocFromAnnotation(MethodNode node) {
-        List<AnnotationNode> annotations = node.annotations
+    private static String getTestDocFromAnnotation(List<AnnotationNode> annotations) {
         if (annotations == null) {
             return null
         }
@@ -111,9 +111,9 @@ class SrcTreeGeneratorUtils {
     }
 
     // TODO captureStyle, lang, TestDocs, etc
-    String getTestDoc(MethodNode method) {
+    String getMethodTestDoc(MethodNode method) {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
-        String annotationTestDoc = getTestDocFromAnnotation(method)
+        String annotationTestDoc = getTestDocFromAnnotation(method.getAnnotations())
         if (annotationTestDoc != null) {
             return annotationTestDoc
         }
@@ -128,12 +128,17 @@ class SrcTreeGeneratorUtils {
         return null
     }
 
+    String getFieldTestDoc(FieldNode field) {
+        // TODO consider additional testDoc
+        return getTestDocFromAnnotation(field.getAnnotations())
+    }
+
     // TODO
     boolean isSubMethod(MethodNode node) {
         if (isRootMethod(node)) {
             return false
         }
-        return getTestDoc(node) != null
+        return getMethodTestDoc(node) != null
     }
 
 }
