@@ -14,7 +14,7 @@ import org.sahagin.runlib.external.adapter.ResourceAdditionalTestDocsAdapter
 import org.sahagin.runlib.external.adapter.ScreenCaptureAdapter
 import org.sahagin.share.CommonPath
 
-public class GebAdapter implements Adapter {
+class GebAdapter implements Adapter {
 
     @Override
     void initialSetAdapter() {
@@ -28,7 +28,7 @@ public class GebAdapter implements Adapter {
     }
 
     // can set null
-    public static void setAdapter(final Browser browser) {
+    static void setAdapter(final Browser browser) {
         AdapterContainer container = AdapterContainer.globalInstance()
         container.setScreenCaptureAdapter(new ScreenCaptureAdapterImpl(browser))
     }
@@ -36,12 +36,12 @@ public class GebAdapter implements Adapter {
     private static class ScreenCaptureAdapterImpl implements ScreenCaptureAdapter {
         private Browser browser
 
-        public ScreenCaptureAdapterImpl(Browser browser) {
+        ScreenCaptureAdapterImpl(Browser browser) {
             this.browser = browser
         }
 
         @Override
-        public byte[] captureScreen() {
+        byte[] captureScreen() {
             if (browser == null) {
                 return null
             }
@@ -67,12 +67,12 @@ public class GebAdapter implements Adapter {
     ResourceAdditionalTestDocsAdapter {
 
         @Override
-        public String resourceDirPath() {
+        String resourceDirPath() {
             return CommonPath.standardAdapdaterLocaleResDirPath("groovy") + "/geb"
         }
 
         @Override
-        public void classAdd() {
+        void classAdd() {
             // delegate setting
             classAdd("geb.junit3.GebTest", "geb.Browser")
             classAdd("geb.junit4.GebTest", "geb.Browser")
@@ -81,7 +81,7 @@ public class GebAdapter implements Adapter {
         }
 
         @Override
-        public void methodAdd() {
+        void methodAdd() {
             // in alphabetical order
             methodAdd("geb.Browser", "go", "String")
             methodAdd("geb.Browser", "to", "java.lang.Class,Object[]", 1)

@@ -14,9 +14,9 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.control.CompilePhase
 
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
-public class RunResultsGenTransformation implements ASTTransformation {
+class RunResultsGenTransformation implements ASTTransformation {
 
-    public void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
+    void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
         println "call visit: " + sourceUnit.name
     }
 
