@@ -18,6 +18,7 @@ import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.sahagin.share.srctree.TestClass
@@ -79,10 +80,14 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
         if (closureStatements.size() != 1) {
             return [null, null]
         }
-        if (!(closureStatements.get(0) instanceof ExpressionStatement)) {
+        Expression valueExpression
+        if (closureStatements.get(0) instanceof ExpressionStatement) {
+            valueExpression = (closureStatements.get(0) as ExpressionStatement).getExpression()
+        } else if (closureStatements.get(0) instanceof ReturnStatement) {
+            valueExpression = (closureStatements.get(0) as ReturnStatement).getExpression()
+        } else {
             return [null, null]
         }
-        Expression valueExpression = (closureStatements.get(0) as ExpressionStatement).getExpression()
         for (MapEntryExpression mapEntry : mapEntries) {
             if (!(mapEntry.getKeyExpression() instanceof ConstantExpression)) {
                 continue
