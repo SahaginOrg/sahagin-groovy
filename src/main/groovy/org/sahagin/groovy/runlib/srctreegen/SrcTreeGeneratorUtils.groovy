@@ -51,7 +51,7 @@ class SrcTreeGeneratorUtils {
         return null
     }
 
-    private static String getClassQualifiedName(ClassNode classNode) {
+    static String getClassQualifiedName(ClassNode classNode) {
         if (classNode.isArray()) {
             return getClassQualifiedName(classNode.getComponentType()) + "[]"
         } else {
@@ -188,6 +188,19 @@ class SrcTreeGeneratorUtils {
         // TODO captureStyle, TestDocs, etc
         testClass.setTestDoc(testDoc)
         return testClass
+    }
+
+    // check whether classNode is the class for className
+    // or inherits from the class for className
+    static boolean inheritsFromClass(ClassNode classNode, String className) {
+        ClassNode parentNode = classNode
+        while (parentNode != null) {
+            if (parentNode.getName() == className) {
+                return true
+            }
+            parentNode = parentNode.getSuperClass()
+        }
+        return false
     }
 
 }

@@ -25,6 +25,7 @@ import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
 import org.sahagin.share.srctree.TestFieldTable
 import org.sahagin.share.srctree.TestMethodTable
+import org.sahagin.share.srctree.code.UnknownCode
 
 // Geb specific visitor. This visitor collects all page contents and set them to fieldTable
 // TODO move this class to test framework specific logic directory
@@ -48,35 +49,40 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
         return null // dummy
     }
 
-    private boolean inheritsFromGebPage(ClassNode classNode) {
-        ClassNode parentNode = classNode
-        while (parentNode != null) {
-            if (parentNode.getName() == "geb.Page") {
-                return true
-            }
-            parentNode = parentNode.getSuperClass()
-        }
-        return false
-    }
-
     boolean needsVisit(ClassNode classNode) {
-        return inheritsFromGebPage(classNode)
+        return SrcTreeGeneratorUtils.inheritsFromClass(classNode, "geb.Page")
     }
 
-    // return null if not found
-    private String getTestDocFromContentMethodCall(MethodCallExpression methodCall) {
+    // return [testDoc string, content value Expression].
+    // return [null, null] if not found
+    def getTestDocAndValueFromContent(MethodCallExpression methodCall) {
         if (!(methodCall.getArguments() instanceof ArgumentListExpression)) {
-            return null
+            return [null, null]
         }
         List<Expression> arguments = (methodCall.getArguments() as ArgumentListExpression).getExpressions()
         // first argument is option map, second argument is content definition closure
         if (arguments.size() < 2) {
-            return null
+            return [null, null]
         }
         if (!(arguments.get(0) instanceof MapExpression)) {
-            return null
+            return [null, null]
         }
         List<MapEntryExpression> mapEntries = (arguments.get(0) as MapExpression).getMapEntryExpressions()
+        if (!(arguments.get(1) instanceof ClosureExpression)) {
+            return [null, null]
+        }
+        Statement closureCode = (arguments.get(1) as ClosureExpression).getCode()
+        if (!(closureCode instanceof BlockStatement)) {
+            return [null, null]
+        }
+        List<Statement> closureStatements = (closureCode as BlockStatement).getStatements()
+        if (closureStatements.size() != 1) {
+            return [null, null]
+        }
+        if (!(closureStatements.get(0) instanceof ExpressionStatement)) {
+            return [null, null]
+        }
+        Expression valueExpression = (closureStatements.get(0) as ExpressionStatement).getExpression()
         for (MapEntryExpression mapEntry : mapEntries) {
             if (!(mapEntry.getKeyExpression() instanceof ConstantExpression)) {
                 continue
@@ -89,9 +95,10 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
                 // TODO throw more user friendly error
                 throw new RuntimeException("testDoc value must be constant: " + mapEntry.getValueExpression())
             }
-            return (mapEntry.getValueExpression() as ConstantExpression).getValue().toString()
+            String testDoc = (mapEntry.getValueExpression() as ConstantExpression).getValue().toString()
+            return [testDoc, valueExpression]
         }
-        return null
+        return [null, null]
     }
 
     @Override
@@ -133,7 +140,7 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
                 continue
             }
             List<Statement> list = (closureCode as BlockStatement).getStatements()
-            List<Pair<String, String>> fieldNameAndTestDocs = new ArrayList<Pair<String, String>>(list.size())
+            List<TestField> testFields = new ArrayList<TestField>(list.size())
             // iterate page object content definition
             for (Statement statement : list) {
                 if (!(statement instanceof ExpressionStatement)) {
@@ -144,16 +151,24 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
                     continue
                 }
                 MethodCallExpression methodCall = (expression as MethodCallExpression)
-                String testDoc = getTestDocFromContentMethodCall(methodCall)
+                String testDoc
+                Expression fieldValue
+                (testDoc, fieldValue) = getTestDocAndValueFromContent(methodCall)
                 if (testDoc == null) {
                     continue
                 }
-                // the property for each method name will be defined on the page object
-                String fieldName = methodCall.getMethodAsString()
-                fieldNameAndTestDocs.add(Pair.of(fieldName, testDoc))
+                TestField testField = new TestField()
+                // each method name will become page object property
+                testField.setSimpleName(methodCall.getMethodAsString())
+                testField.setTestDoc(testDoc)
+                // TODO temporal code.. file value is not always Unknown code..
+                UnknownCode fieldValueCode = new UnknownCode()
+                fieldValueCode.setOriginal(fieldValue.getText())
+                testField.setValue(fieldValueCode)
+                testFields.add(testField)
             }
 
-            if (fieldNameAndTestDocs.size() == 0) {
+            if (testFields.size() == 0) {
                 continue
             }
 
@@ -168,14 +183,10 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            for (Pair<String, String> pair : fieldNameAndTestDocs) {
-                TestField testField = new TestField()
+            for (TestField testField : testFields) {
                 testField.setTestClassKey(testClass.getKey())
                 testField.setTestClass(testClass)
-                testField.setKey(testClass.getKey() + "." + pair.getLeft())
-                testField.setSimpleName(pair.getLeft())
-                testField.setTestDoc(pair.getRight())
-                testField.setValue(null) // TODO not supported now
+                testField.setKey(testClass.getKey() + "." + testField.getSimpleName())
 
                 fieldTable.addTestField(testField)
                 testClass.addTestFieldKey(testField.getKey())

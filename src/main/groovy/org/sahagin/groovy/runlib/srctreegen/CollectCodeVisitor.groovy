@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
+import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
@@ -288,8 +289,22 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns [VarAssing, ClassNode]
     private def generateVarAssignCode(Expression left, Expression right,
         String original, ClassNode thisClassNode) {
-        Code leftCode = expressionCode(left, thisClassNode).first()
-        Code rightCode = expressionCode(right, thisClassNode).first()
+        Code rightCode
+        ClassNode rightClass
+        (rightCode, rightClass) = expressionCode(right, thisClassNode)
+        Code leftCode
+        ClassNode leftClass
+        (leftCode, leftClass) = expressionCode(left, thisClassNode)
+
+        String classKey = SrcTreeGeneratorUtils.getClassQualifiedName(leftClass)
+        TestClass subClass = subClassTable.getByKey(classKey)
+        if ((subClass != null && subClass instanceof PageClass) ||
+            SrcTreeGeneratorUtils.inheritsFromClass(leftClass, "geb.Page")) {
+            // ignore left for page type variable assignment
+            // since usually page type variable is not used in other TestDoc
+            return [rightCode, rightClass]
+        }
+
         VarAssign assign = new VarAssign()
         assign.setOriginal(original)
         assign.setVariable(leftCode)
