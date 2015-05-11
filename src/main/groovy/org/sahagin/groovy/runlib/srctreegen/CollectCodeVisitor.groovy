@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.PageClass
@@ -419,10 +420,26 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        TestMethod testMethod
+        MethodType methodType
         if (SrcTreeGeneratorUtils.isRootMethod(node)) {
-            testMethod = getTestMethod(node, rootMethodTable)
+            methodType = MethodType.ROOT
         } else if (utils.isSubMethod(node)) {
+            methodType = MethodType.SUB
+        } else {
+            methodType = MethodType.NONE
+        }
+        for (SrcTreeVisitorListener listener : utils.getListeners()) {
+            if (listener.beforeCollectCode(node, methodType,
+                rootClassTable, rootMethodTable, subClassTable, subMethodTable, fieldTable)) {
+                super.visitMethod(node)
+                return
+            }
+        }
+
+        TestMethod testMethod
+        if (methodType == MethodType.ROOT) {
+            testMethod = getTestMethod(node, rootMethodTable)
+        } else if (methodType == MethodType.SUB) {
             testMethod = getTestMethod(node, subMethodTable)
         } else {
             super.visitMethod(node)

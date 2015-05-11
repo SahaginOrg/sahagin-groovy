@@ -28,6 +28,7 @@ import org.sahagin.share.srctree.SrcTree
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.control.Phases
 
 class SrcTreeGenerator {
     private AdditionalTestDocs additionalTestDocs
@@ -54,9 +55,15 @@ class SrcTreeGenerator {
 
         CompilationUnit compilation = new CompilationUnit(groovyLoader)
         compilation.addSources(srcFiles)
+        // TODO maybe don't need to execute all phase
+        // maybe this works if Phase.CANONICALIZATION is specified
+        // (when Phase.CANONICALIZATION is specified, page content value closure
+        // is not moved to static initializer part, so you must change CollectGebPageContentVisitor
+        // logic)
         compilation.compile()
         Collection<SourceUnit> sources = compilation.sources.values()
         SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
+        utils.addListener(new CollectGebPageContentListener(utils))
 
         CollectRootVisitor rootVisitor = new CollectRootVisitor(utils)
         for (SourceUnit src : sources) {
@@ -70,17 +77,6 @@ class SrcTreeGenerator {
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(subVisitor)
-            }
-        }
-
-        CollectGebPageContentVisitor gebVisitor = new CollectGebPageContentVisitor(
-            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-            subVisitor.getFieldTable(), utils)
-        for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
-                if (gebVisitor.needsVisit(classNode)) {
-                    classNode.visitContents(gebVisitor)
-                }
             }
         }
 

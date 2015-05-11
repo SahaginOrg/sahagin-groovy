@@ -1,16 +1,12 @@
 package org.sahagin.groovy.runlib.srctreegen
 
-import org.apache.commons.lang3.tuple.Pair
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.PropertyNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.FieldExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
@@ -20,7 +16,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
-import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
@@ -29,29 +25,11 @@ import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.share.srctree.code.UnknownCode
 
 // Geb specific visitor. This visitor collects all page contents and set them to fieldTable
-// TODO move this class to test framework specific logic directory
-class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
-    private TestClassTable subClassTable
-    private TestClassTable rootClassTable
-    private TestFieldTable fieldTable
+class CollectGebPageContentListener extends SrcTreeVisitorListener {
     private SrcTreeGeneratorUtils utils
 
-    CollectGebPageContentVisitor(TestClassTable rootClassTable,
-        TestClassTable subClassTable, TestFieldTable fieldTable,
-        SrcTreeGeneratorUtils utils) {
-        this.rootClassTable = rootClassTable
-        this.subClassTable = subClassTable
-        this.fieldTable = fieldTable
+    CollectGebPageContentListener(SrcTreeGeneratorUtils utils) {
         this.utils = utils
-    }
-
-    @Override
-    protected SourceUnit getSourceUnit() {
-        return null // dummy
-    }
-
-    boolean needsVisit(ClassNode classNode) {
-        return SrcTreeGeneratorUtils.inheritsFromClass(classNode, "geb.Page")
     }
 
     // return [testDoc string, content value Expression].
@@ -60,7 +38,8 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
         if (!(methodCall.getArguments() instanceof ArgumentListExpression)) {
             return [null, null]
         }
-        List<Expression> arguments = (methodCall.getArguments() as ArgumentListExpression).getExpressions()
+        List<Expression> arguments =
+        (methodCall.getArguments() as ArgumentListExpression).getExpressions()
         // first argument is option map, second argument is content definition closure
         if (arguments.size() < 2) {
             return [null, null]
@@ -98,7 +77,8 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
             }
             if (!(mapEntry.getValueExpression() instanceof ConstantExpression)) {
                 // TODO throw more user friendly error
-                throw new RuntimeException("testDoc value must be constant: " + mapEntry.getValueExpression())
+                throw new RuntimeException(
+                    "testDoc value must be constant: " + mapEntry.getValueExpression())
             }
             String testDoc = (mapEntry.getValueExpression() as ConstantExpression).getValue().toString()
             return [testDoc, valueExpression]
@@ -107,18 +87,21 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
-    void visitMethod(MethodNode method) {
+    boolean beforeCollectSubMethod(MethodNode node, MethodType type,
+        TestClassTable rootClassTable, TestClassTable subClassTable,
+        TestMethodTable subMethodTable, TestFieldTable fieldTable) {
+        if (!SrcTreeGeneratorUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
+            return false
+        }
         // Search static initializer
         // since content DSL closure logic has been moved to static constructor part by Groovy compiler,
-        if (!method.staticConstructor) {
-            super.visitMethod(method)
-            return
+        if (!node.staticConstructor) {
+            return false
         }
-        if (!(method.getCode() instanceof BlockStatement)) {
-            super.visitMethod(method)
-            return
+        if (!(node.getCode() instanceof BlockStatement)) {
+            return false
         }
-        List<Statement> blockStatements = (method.getCode() as BlockStatement).getStatements()
+        List<Statement> blockStatements = (node.getCode() as BlockStatement).getStatements()
         for (Statement blockStatement : blockStatements) {
             if (!(blockStatement instanceof ExpressionStatement)) {
                 continue
@@ -177,7 +160,7 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
                 continue
             }
 
-            ClassNode classNode = method.getDeclaringClass()
+            ClassNode classNode = node.getDeclaringClass()
             String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
             TestClass testClass = rootClassTable.getByKey(classQName)
             if (testClass == null) {
@@ -199,9 +182,7 @@ class CollectGebPageContentVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        super.visitMethod(method)
+        return true
     }
 
 }
-
-

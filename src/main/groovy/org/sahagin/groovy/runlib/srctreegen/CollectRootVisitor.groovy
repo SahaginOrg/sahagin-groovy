@@ -7,6 +7,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
@@ -41,7 +42,21 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        if (!SrcTreeGeneratorUtils.isRootMethod(node)) {
+        MethodType methodType
+        if (SrcTreeGeneratorUtils.isRootMethod(node)) {
+            methodType = MethodType.ROOT
+        } else {
+            methodType = MethodType.NONE
+        }
+        for (SrcTreeVisitorListener listener : utils.getListeners()) {
+            if (listener.beforeCollectRootMethod(
+                node, methodType, rootClassTable, rootMethodTable)) {
+                super.visitMethod(node)
+                return
+            }
+        }
+
+        if (methodType != MethodType.ROOT) {
             super.visitMethod(node)
             return
         }

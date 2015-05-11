@@ -8,6 +8,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
@@ -53,7 +54,21 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        if (!utils.isSubMethod(node)) {
+        MethodType methodType
+        if (utils.isSubMethod(node)) {
+            methodType = MethodType.SUB
+        } else {
+            methodType = MethodType.NONE
+        }
+        for (SrcTreeVisitorListener listener : utils.getListeners()) {
+            if (listener.beforeCollectSubMethod(node, methodType,
+                rootClassTable, subClassTable, subMethodTable, fieldTable)) {
+                super.visitMethod(node)
+                return
+            }
+        }
+
+        if (methodType != MethodType.SUB) {
             super.visitMethod(node)
             return
         }
