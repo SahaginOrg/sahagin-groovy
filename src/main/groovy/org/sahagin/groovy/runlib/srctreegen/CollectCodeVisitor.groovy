@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.MethodCall
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
@@ -57,9 +58,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
 
-    CollectCodeVisitor(TestClassTable rootClassTable, TestClassTable subClassTable,
+    CollectCodeVisitor(SourceUnit srcUnit,
+        TestClassTable rootClassTable, TestClassTable subClassTable,
         TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
         TestFieldTable fieldTable, SrcTreeGeneratorUtils utils) {
+        this.srcUnit = srcUnit
         this.rootClassTable = rootClassTable
         this.subClassTable = subClassTable
         this.rootMethodTable = rootMethodTable
@@ -68,8 +71,24 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         this.utils = utils
     }
 
-    void setSrcUnit(SourceUnit srcUnit) {
-        this.srcUnit = srcUnit
+    TestClassTable getRootClassTable() {
+        return rootClassTable
+    }
+
+    TestMethodTable getRootMethodTable() {
+        return rootMethodTable
+    }
+
+    TestClassTable getSubClassTable() {
+        return subClassTable
+    }
+
+    TestMethodTable getSubMethodTable() {
+        return subMethodTable
+    }
+
+    TestFieldTable getFieldTable() {
+        return fieldTable
     }
 
     @Override
@@ -136,18 +155,6 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return null
     }
 
-    private static TestMethod getTestMethod(MethodNode methodNode, TestMethodTable methodTable) {
-        // TODO searching twice from table is not elegant logic..
-        TestMethod testMethod = methodTable.getByKey(
-                SrcTreeGeneratorUtils.generateMethodKey(methodNode, false))
-        if (testMethod != null) {
-            return testMethod
-        }
-        testMethod = methodTable.getByKey(
-        SrcTreeGeneratorUtils.generateMethodKey(methodNode, true))
-        return testMethod
-    }
-
     // returns [TestMethod, MethodNode]
     private def getThisOrSuperMethodSubNoDelegate(ClassNode classNode,
             String methodAsString, List<ClassNode> argClasses) {
@@ -155,7 +162,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         if (methodNode == null) {
             return [null, null]
         }
-        TestMethod testMethod = getTestMethod(methodNode, subMethodTable)
+        TestMethod testMethod = SrcTreeGeneratorUtils.getTestMethod(methodNode, subMethodTable)
         return [testMethod, methodNode]
     }
 
@@ -233,8 +240,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // return [Code, ClassNode]
-    private def generateMethodInvokeCode(ASTNode receiver,
-            String methodAsString, Expression arguments, String original, ClassNode thisClassNode) {
+    def generateMethodInvokeCode(MethodCall methodCall, ClassNode thisClassNode) {
+        ASTNode receiver = methodCall.getReceiver()
+        String methodAsString = methodCall.getMethodAsString()
+        Expression arguments = methodCall.getArguments()
+        String original = methodCall.getText()
         Code receiverCode
         ClassNode receiverClassNode
         if (receiver instanceof ClassNode) {
@@ -292,8 +302,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // returns [VarAssing, ClassNode]
-    private def generateVarAssignCode(Expression left, Expression right,
-        String original, ClassNode thisClassNode) {
+    def generateVarAssignCode(BinaryExpression binary, ClassNode thisClassNode) {
+        Expression left = binary.getLeftExpression()
+        Expression right = binary.getRightExpression()
+        String original = binary.getText()
         Code rightCode
         ClassNode rightClass
         (rightCode, rightClass) = expressionCode(right, thisClassNode)
@@ -317,7 +329,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [assign, ClassHelper.VOID_TYPE]
     }
 
-    private def generateFieldCode(PropertyExpression property, ClassNode thisClassNode) {
+    def generateFieldCode(PropertyExpression property, ClassNode thisClassNode) {
         Expression receiver = property.getObjectExpression()
         Code receiverCode
         ClassNode receiverClass
@@ -337,14 +349,14 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // returns [UnknownCode, ClassNode]
-    private def generateUnknownCode(String original, ClassNode classNode) {
+    def generateUnknownCode(String original, ClassNode classNode) {
         UnknownCode unknownCode = new UnknownCode()
         unknownCode.setOriginal(original)
         return [unknownCode, classNode]
     }
 
     // returns [UnknownCode, ClassNode]
-    private def generateUnknownCode(Expression expression) {
+    def generateUnknownCode(Expression expression) {
         // TODO using getText is temporal logic
         return generateUnknownCode(expression.getText(), expression.getType())
     }
@@ -366,8 +378,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     || binary.getRightExpression() instanceof EmptyExpression) {
                     return generateUnknownCode(expression)
                 } else {
-                    return generateVarAssignCode(binary.getLeftExpression(),
-                        binary.getRightExpression(), binary.getText(), thisClassNode)
+                    return generateVarAssignCode(binary, thisClassNode)
                 }
             } else {
                 return generateUnknownCode(expression)
@@ -389,19 +400,13 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         } else if (expression instanceof MethodCallExpression) {
             // TODO TestStepLabel handling
             MethodCallExpression methodCall = expression as MethodCallExpression
-            return generateMethodInvokeCode(methodCall.getReceiver(),
-                    methodCall.getMethodAsString(), methodCall.getArguments(),
-                    methodCall.getText(), thisClassNode)
+            return generateMethodInvokeCode(methodCall, thisClassNode)
         } else if (expression instanceof StaticMethodCallExpression) {
             StaticMethodCallExpression methodCall = expression as StaticMethodCallExpression
-            return generateMethodInvokeCode(methodCall.getReceiver(),
-                    methodCall.getMethodAsString(), methodCall.getArguments(),
-                    methodCall.getText(), thisClassNode)
+            return generateMethodInvokeCode(methodCall, thisClassNode)
         } else if (expression instanceof ConstructorCallExpression) {
             ConstructorCallExpression constructorCall = expression as ConstructorCallExpression
-            return generateMethodInvokeCode(constructorCall.getReceiver(),
-                    constructorCall.getMethodAsString(), constructorCall.getArguments(),
-                    constructorCall.getText(), thisClassNode)
+            return generateMethodInvokeCode(constructorCall, thisClassNode)
         } else if ((expression instanceof VariableExpression) &&
             ((expression as VariableExpression).getName() == "this")) {
             // this keyword
@@ -429,8 +434,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             methodType = MethodType.NONE
         }
         for (SrcTreeVisitorListener listener : utils.getListeners()) {
-            if (listener.beforeCollectCode(node, methodType,
-                rootClassTable, rootMethodTable, subClassTable, subMethodTable, fieldTable)) {
+            if (listener.beforeCollectCode(node, methodType, this)) {
                 super.visitMethod(node)
                 return
             }
@@ -438,9 +442,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
         TestMethod testMethod
         if (methodType == MethodType.ROOT) {
-            testMethod = getTestMethod(node, rootMethodTable)
+            testMethod = SrcTreeGeneratorUtils.getTestMethod(node, rootMethodTable)
         } else if (methodType == MethodType.SUB) {
-            testMethod = getTestMethod(node, subMethodTable)
+            testMethod = SrcTreeGeneratorUtils.getTestMethod(node, subMethodTable)
         } else {
             super.visitMethod(node)
             return

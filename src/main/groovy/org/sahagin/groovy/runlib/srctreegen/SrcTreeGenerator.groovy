@@ -82,27 +82,26 @@ class SrcTreeGenerator {
 
         // add additional TestDoc to the table
         AdditionalTestDocsSetter setter = new AdditionalTestDocsSetter(
-            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
+            subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
             rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable())
         setter.set(additionalTestDocs)
 
         DelegateResolver delegateResolver = new DelegateResolver(
-            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable())
+            subVisitor.getRootClassTable(), subVisitor.getSubClassTable())
         delegateResolver.resolve()
 
-        CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
-            rootVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
-            subVisitor.getFieldTable(), utils)
         for (SourceUnit src : sources) {
-            codeVisitor.setSrcUnit(src)
+            CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
+                    src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
+                    rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
+                    subVisitor.getFieldTable(), utils)
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(codeVisitor)
             }
         }
 
         SrcTree result = new SrcTree()
-        result.setRootClassTable(rootVisitor.getRootClassTable())
+        result.setRootClassTable(subVisitor.getRootClassTable())
         result.setSubClassTable(subVisitor.getSubClassTable())
         result.setRootMethodTable(rootVisitor.getRootMethodTable())
         result.setSubMethodTable(subVisitor.getSubMethodTable())

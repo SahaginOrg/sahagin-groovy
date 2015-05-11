@@ -27,6 +27,7 @@ import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
+import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.runlib.external.TestDoc
 import org.sahagin.runlib.external.Page
 
@@ -62,6 +63,18 @@ class SrcTreeGeneratorUtils {
             return testClass
         }
         return null
+    }
+
+    static TestMethod getTestMethod(MethodNode methodNode, TestMethodTable methodTable) {
+        // TODO searching twice from table is not elegant logic..
+        TestMethod testMethod = methodTable.getByKey(
+                SrcTreeGeneratorUtils.generateMethodKey(methodNode, false))
+        if (testMethod != null) {
+            return testMethod
+        }
+        testMethod = methodTable.getByKey(
+                SrcTreeGeneratorUtils.generateMethodKey(methodNode, true))
+        return testMethod
     }
 
     static String getClassQualifiedName(ClassNode classNode) {

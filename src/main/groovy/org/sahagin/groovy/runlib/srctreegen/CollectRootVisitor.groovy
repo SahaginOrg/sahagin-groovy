@@ -49,8 +49,7 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
             methodType = MethodType.NONE
         }
         for (SrcTreeVisitorListener listener : utils.getListeners()) {
-            if (listener.beforeCollectRootMethod(
-                node, methodType, rootClassTable, rootMethodTable)) {
+            if (listener.beforeCollectRootMethod(node, methodType, this)) {
                 super.visitMethod(node)
                 return
             }

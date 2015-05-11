@@ -33,6 +33,10 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
         this.utils = utils
     }
 
+    TestClassTable getRootClassTable() {
+        return rootClassTable
+    }
+
     TestClassTable getSubClassTable() {
         return subClassTable
     }
@@ -61,8 +65,7 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
             methodType = MethodType.NONE
         }
         for (SrcTreeVisitorListener listener : utils.getListeners()) {
-            if (listener.beforeCollectSubMethod(node, methodType,
-                rootClassTable, subClassTable, subMethodTable, fieldTable)) {
+            if (listener.beforeCollectSubMethod(node, methodType, this)) {
                 super.visitMethod(node)
                 return
             }

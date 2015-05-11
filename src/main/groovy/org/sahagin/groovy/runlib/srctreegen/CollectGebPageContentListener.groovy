@@ -132,10 +132,7 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
     }
 
     @Override
-    boolean beforeCollectCode(MethodNode node, MethodType type,
-        TestClassTable rootClassTable, TestMethodTable rootMethodTable,
-        TestClassTable subClassTable, TestMethodTable subMethodTable,
-        TestFieldTable fieldTable) {
+    boolean beforeCollectCode(MethodNode node, MethodType type, CollectCodeVisitor visitor) {
         BlockStatement contentClosureBlock = getContentClosureBlock(node)
         if (contentClosureBlock == null) {
             return false
@@ -158,7 +155,7 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
             if (testDoc == null) {
                 continue
             }
-            TestField testField = fieldTable.getByKey(SrcTreeGeneratorUtils.generateFieldKey(
+            TestField testField = visitor.getFieldTable().getByKey(SrcTreeGeneratorUtils.generateFieldKey(
                 node.getDeclaringClass(), methodCall.getMethodAsString()))
             assert testField != null
 
@@ -172,9 +169,7 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
 
     // field value is not set by this method
     @Override
-    boolean beforeCollectSubMethod(MethodNode node, MethodType type,
-        TestClassTable rootClassTable, TestClassTable subClassTable,
-            TestMethodTable subMethodTable, TestFieldTable fieldTable) {
+    boolean beforeCollectSubMethod(MethodNode node, MethodType type, CollectSubVisitor visitor) {
         BlockStatement contentClosureBlock = getContentClosureBlock(node)
         if (contentClosureBlock == null) {
             return false
@@ -211,12 +206,12 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
 
         ClassNode classNode = node.getDeclaringClass()
         String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
-        TestClass testClass = rootClassTable.getByKey(classQName)
+        TestClass testClass = visitor.getRootClassTable().getByKey(classQName)
         if (testClass == null) {
-            testClass = subClassTable.getByKey(classQName)
+            testClass = visitor.getSubClassTable().getByKey(classQName)
             if (testClass == null) {
                 testClass = utils.generateTestClass(classNode)
-                subClassTable.addTestClass(testClass)
+                visitor.getSubClassTable().addTestClass(testClass)
             }
         }
 
@@ -225,7 +220,7 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
             testField.setTestClass(testClass)
             testField.setKey(
                 SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.getSimpleName()))
-            fieldTable.addTestField(testField)
+            visitor.getFieldTable().addTestField(testField)
             testClass.addTestFieldKey(testField.getKey())
             testClass.addTestField(testField)
         }
