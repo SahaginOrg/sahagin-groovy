@@ -31,7 +31,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
-import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.CollectPhase
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.PageClass
@@ -57,11 +57,12 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private TestFieldTable fieldTable
     private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
+    private CollectPhase phase
 
     CollectCodeVisitor(SourceUnit srcUnit,
         TestClassTable rootClassTable, TestClassTable subClassTable,
         TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
-        TestFieldTable fieldTable, SrcTreeGeneratorUtils utils) {
+        TestFieldTable fieldTable, SrcTreeGeneratorUtils utils, CollectPhase phase) {
         this.srcUnit = srcUnit
         this.rootClassTable = rootClassTable
         this.subClassTable = subClassTable
@@ -69,6 +70,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         this.subMethodTable = subMethodTable
         this.fieldTable = fieldTable
         this.utils = utils
+        this.phase = phase
     }
 
     TestClassTable getRootClassTable() {
@@ -253,7 +255,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             receiverCode = generateUnknownCode(
                 receiverClassNode.getNameWithoutPackage(), receiverClassNode).first()
         } else if (receiver instanceof Expression) {
-            (receiverCode, receiverClassNode) = expressionCode(receiver as Expression, thisClassNode)
+            (receiverCode, receiverClassNode) = generateExpressionCode(
+                receiver as Expression, thisClassNode)
         } else {
             // TODO receiver may be null for constructor..
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
@@ -272,7 +275,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         for (Expression argExpression : argumentList.getExpressions()) {
             Code argCode
             ClassNode argClass
-            (argCode, argClass) = expressionCode(argExpression, thisClassNode)
+            (argCode, argClass) = generateExpressionCode(argExpression, thisClassNode)
             argCodes.add(argCode)
             argClasses.add(argClass)
         }
@@ -308,10 +311,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         String original = binary.getText()
         Code rightCode
         ClassNode rightClass
-        (rightCode, rightClass) = expressionCode(right, thisClassNode)
+        (rightCode, rightClass) = generateExpressionCode(right, thisClassNode)
         Code leftCode
         ClassNode leftClass
-        (leftCode, leftClass) = expressionCode(left, thisClassNode)
+        (leftCode, leftClass) = generateExpressionCode(left, thisClassNode)
 
         String classKey = SrcTreeGeneratorUtils.getClassQualifiedName(leftClass)
         TestClass subClass = subClassTable.getByKey(classKey)
@@ -333,7 +336,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         Expression receiver = property.getObjectExpression()
         Code receiverCode
         ClassNode receiverClass
-        (receiverCode, receiverClass) = expressionCode(receiver, thisClassNode)
+        (receiverCode, receiverClass) = generateExpressionCode(receiver, thisClassNode)
         String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(
             receiverClass, property.getPropertyAsString())
         TestField testField = fieldTable.getByKey(fieldKey)
@@ -362,7 +365,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // returns [Code, ClassNode]
-    def expressionCode(Expression expression, ClassNode thisClassNode) {
+    def generateExpressionCode(Expression expression, ClassNode thisClassNode) {
         if (expression == null) {
             StringCode strCode = new StringCode()
             strCode.setValue(null)
@@ -425,25 +428,35 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        MethodType methodType
-        if (SrcTreeGeneratorUtils.isRootMethod(node)) {
-            methodType = MethodType.ROOT
-        } else if (utils.isSubMethod(node)) {
-            methodType = MethodType.SUB
+        if (phase == CollectPhase.BEFORE) {
+            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+                if (listener.beforeCollectCode(node, this)) {
+                    break
+                }
+            }
+            super.visitMethod(node)
+            return
+        } else if (phase == CollectPhase.AFTER) {
+            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+                if (listener.afterCollectCode(node, this)) {
+                    break
+                }
+            }
+            super.visitMethod(node)
+            return
         } else {
-            methodType = MethodType.NONE
-        }
-        for (SrcTreeVisitorListener listener : utils.getListeners()) {
-            if (listener.beforeCollectCode(node, methodType, this)) {
-                super.visitMethod(node)
-                return
+            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+                if (listener.collectCode(node, this)) {
+                    super.visitMethod(node)
+                    return
+                }
             }
         }
 
         TestMethod testMethod
-        if (methodType == MethodType.ROOT) {
+        if (SrcTreeGeneratorUtils.isRootMethod(node)) {
             testMethod = SrcTreeGeneratorUtils.getTestMethod(node, rootMethodTable)
-        } else if (methodType == MethodType.SUB) {
+        } else if (utils.isSubMethod(node)) {
             testMethod = SrcTreeGeneratorUtils.getTestMethod(node, subMethodTable)
         } else {
             super.visitMethod(node)
@@ -472,7 +485,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             Code code
             if (statement instanceof ExpressionStatement) {
                 Expression expression = (statement as ExpressionStatement).getExpression()
-                code = expressionCode(expression, node.getDeclaringClass()).first()
+                code = generateExpressionCode(expression, node.getDeclaringClass()).first()
             } else {
                 code = new UnknownCode()
             }
@@ -481,7 +494,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             codeLine.setStartLine(statement.getLineNumber())
             codeLine.setEndLine(statement.getLastLineNumber())
             codeLine.setCode(code)
-            // sometimes original value set by expressionCode method does not equal to the one of statementNode
+            // sometimes original value set by expressionCode method does not equal to
+            // the one of statementNode
             // TODO temp
             //code.setOriginal(statement.getText())
             code.setOriginal(lineText.trim())

@@ -7,27 +7,63 @@ import org.sahagin.share.srctree.TestMethodTable
 
 abstract class SrcTreeVisitorListener {
 
-    enum MethodType {
-        NONE,
-        ROOT,
-        SUB
+    enum CollectPhase {
+        BEFORE,
+        WHILE,
+        AFTER
     }
 
-    // if returns true, the subsequent visitor or visitor listener logics are skipped
-    boolean beforeCollectRootMethod(MethodNode node,
-        MethodType type, CollectRootVisitor visitor) {
+    // Called before all CollectRootVisitor method visits.
+    // If returns true, the subsequent visitor listener logics are skipped
+    boolean beforeCollectRootMethod(MethodNode node, CollectRootVisitor visitor) {
         return false
     }
 
-    // if returns true, the subsequent visitor or visitor listener logics are skipped
-    boolean beforeCollectSubMethod(MethodNode node,
-        MethodType type, CollectSubVisitor visitor) {
+    // Called while other CollectRootVisitor method visits.
+    // If returns true, the subsequent visitor or visitor listener logics are skipped
+    boolean collectRootMethod(MethodNode node, CollectRootVisitor visitor) {
         return false
     }
 
-    // if returns true, the subsequent visitor or visitor listener logics are skipped
-    boolean beforeCollectCode(MethodNode node,
-        MethodType type, CollectCodeVisitor visitor) {
+    // Called after all CollectRootVisitor method visits.
+    // If returns true, the subsequent visitor listener logics are skipped
+    boolean afterCollectRootMethod(MethodNode node, CollectRootVisitor visitor) {
+        return false
+    }
+
+    // Called before all CollectSubVisitor method visits.
+    // If returns true, the subsequent visitor listener logics are skipped
+    boolean beforeCollectSubMethod(MethodNode node, CollectSubVisitor visitor) {
+        return false
+    }
+
+    // Called while other CollectSubVisitor method visits.
+    // If returns true, the subsequent visitor or visitor listener logics are skipped
+    boolean collectSubMethod(MethodNode node, CollectSubVisitor visitor) {
+        return false
+    }
+
+    // Called after all CollectSubVisitor method visits.
+    // If returns true, the subsequent visitor listener logics are skipped
+    boolean afterCollectSubMethod(MethodNode node, CollectSubVisitor visitor) {
+        return false
+    }
+
+    // Called before all CollectCodeVisitor method visits.
+    // If returns true, the subsequent visitor listener logics are skipped
+    boolean beforeCollectCode(MethodNode node, CollectCodeVisitor visitor) {
+        return false
+    }
+
+    // Called while other CollectCodeVisitor method visits.
+    // If returns true, the subsequent visitor or visitor listener logics are skipped
+    boolean collectCode(MethodNode node, CollectCodeVisitor visitor) {
+        return false
+    }
+
+    // Called after all CollectCodeVisitor method visits.
+    // If returns true, the subsequent visitor listener logics are skipped
+    boolean afterCollectCode(MethodNode node, CollectCodeVisitor visitor) {
         return false
     }
 

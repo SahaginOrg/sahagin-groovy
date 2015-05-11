@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.SourceUnit
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.CollectPhase
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.srctreegen.AdditionalTestDocsSetter
 import org.sahagin.runlib.srctreegen.SrcTreeGenerator.CollectRootRequestor
@@ -65,18 +66,46 @@ class SrcTreeGenerator {
         SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
         utils.addListener(new CollectGebPageContentListener(utils))
 
-        CollectRootVisitor rootVisitor = new CollectRootVisitor(utils)
+        // collect root visitor
+        CollectRootVisitor beforeRootVisitor = new CollectRootVisitor(utils, CollectPhase.BEFORE)
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                classNode.visitContents(beforeRootVisitor)
+            }
+        }
+        CollectRootVisitor rootVisitor = new CollectRootVisitor(utils, CollectPhase.WHILE)
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(rootVisitor)
             }
         }
+        CollectRootVisitor afterRootVisitor = new CollectRootVisitor(utils, CollectPhase.AFTER)
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                classNode.visitContents(afterRootVisitor)
+            }
+        }
 
+        // collect sub visitor
+        CollectSubVisitor beforeSubVisitor = new CollectSubVisitor(
+            rootVisitor.getRootClassTable(), utils, CollectPhase.BEFORE)
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                classNode.visitContents(beforeSubVisitor)
+            }
+        }
         CollectSubVisitor subVisitor = new CollectSubVisitor(
-            rootVisitor.getRootClassTable(), utils)
+            rootVisitor.getRootClassTable(), utils, CollectPhase.WHILE)
         for (SourceUnit src : sources) {
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(subVisitor)
+            }
+        }
+        CollectSubVisitor afterSubVisitor = new CollectSubVisitor(
+            rootVisitor.getRootClassTable(), utils, CollectPhase.AFTER)
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                classNode.visitContents(afterSubVisitor)
             }
         }
 
@@ -86,17 +115,37 @@ class SrcTreeGenerator {
             rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable())
         setter.set(additionalTestDocs)
 
+        // delegation resolver
         DelegateResolver delegateResolver = new DelegateResolver(
             subVisitor.getRootClassTable(), subVisitor.getSubClassTable())
         delegateResolver.resolve()
 
+        // collect code visitor
+        for (SourceUnit src : sources) {
+            CollectCodeVisitor beforeCodeVisitor = new CollectCodeVisitor(
+                    src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
+                    rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
+                    subVisitor.getFieldTable(), utils, CollectPhase.BEFORE)
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                classNode.visitContents(beforeCodeVisitor)
+            }
+        }
         for (SourceUnit src : sources) {
             CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
                     src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
                     rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
-                    subVisitor.getFieldTable(), utils)
+                    subVisitor.getFieldTable(), utils, CollectPhase.WHILE)
             for (ClassNode classNode : src.getAST().getClasses()) {
                 classNode.visitContents(codeVisitor)
+            }
+        }
+        for (SourceUnit src : sources) {
+            CollectCodeVisitor afterCodeVisitor = new CollectCodeVisitor(
+                    src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
+                    rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
+                    subVisitor.getFieldTable(), utils, CollectPhase.AFTER)
+            for (ClassNode classNode : src.getAST().getClasses()) {
+                classNode.visitContents(afterCodeVisitor)
             }
         }
 

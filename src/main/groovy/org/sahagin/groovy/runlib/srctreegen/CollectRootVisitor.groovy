@@ -7,7 +7,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.control.SourceUnit
-import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.CollectPhase
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
@@ -20,11 +20,13 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
     private TestClassTable rootClassTable
     private TestMethodTable rootMethodTable
     private SrcTreeGeneratorUtils utils
+    private CollectPhase phase
 
-    CollectRootVisitor(SrcTreeGeneratorUtils utils) {
+    CollectRootVisitor(SrcTreeGeneratorUtils utils, CollectPhase phase) {
         rootClassTable = new TestClassTable()
         rootMethodTable = new TestMethodTable()
         this.utils = utils
+        this.phase = phase
     }
 
     TestClassTable getRootClassTable() {
@@ -42,20 +44,32 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        MethodType methodType
-        if (SrcTreeGeneratorUtils.isRootMethod(node)) {
-            methodType = MethodType.ROOT
+        if (phase == CollectPhase.BEFORE) {
+            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+                if (listener.beforeCollectRootMethod(node, this)) {
+                    break
+                }
+            }
+            super.visitMethod(node)
+            return
+        } else if (phase == CollectPhase.AFTER) {
+            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+                if (listener.afterCollectRootMethod(node, this)) {
+                    break
+                }
+            }
+            super.visitMethod(node)
+            return
         } else {
-            methodType = MethodType.NONE
-        }
-        for (SrcTreeVisitorListener listener : utils.getListeners()) {
-            if (listener.beforeCollectRootMethod(node, methodType, this)) {
-                super.visitMethod(node)
-                return
+            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+                if (listener.collectRootMethod(node, this)) {
+                    super.visitMethod(node)
+                    return
+                }
             }
         }
 
-        if (methodType != MethodType.ROOT) {
+        if (!SrcTreeGeneratorUtils.isRootMethod(node)) {
             super.visitMethod(node)
             return
         }

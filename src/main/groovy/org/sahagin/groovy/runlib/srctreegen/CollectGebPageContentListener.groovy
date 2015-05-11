@@ -16,12 +16,12 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
-import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.MethodType
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
 import org.sahagin.share.srctree.TestFieldTable
 import org.sahagin.share.srctree.TestMethodTable
+import org.sahagin.share.srctree.code.Code
 import org.sahagin.share.srctree.code.UnknownCode
 
 // Geb specific visitor. This visitor collects all page contents and set them to fieldTable
@@ -131,8 +131,9 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
         return [null, null]
     }
 
+    // collect all page object content values before collecting other codes
     @Override
-    boolean beforeCollectCode(MethodNode node, MethodType type, CollectCodeVisitor visitor) {
+    boolean beforeCollectCode(MethodNode node, CollectCodeVisitor visitor) {
         BlockStatement contentClosureBlock = getContentClosureBlock(node)
         if (contentClosureBlock == null) {
             return false
@@ -159,9 +160,7 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
                 node.getDeclaringClass(), methodCall.getMethodAsString()))
             assert testField != null
 
-            // TODO temporal code.. file value is not always Unknown code..
-            UnknownCode fieldValueCode = new UnknownCode()
-            fieldValueCode.setOriginal(fieldValue.getText())
+            Code fieldValueCode = visitor.generateExpressionCode(fieldValue, node.getDeclaringClass()).first()
             testField.setValue(fieldValueCode)
         }
         return true
@@ -169,7 +168,7 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
 
     // field value is not set by this method
     @Override
-    boolean beforeCollectSubMethod(MethodNode node, MethodType type, CollectSubVisitor visitor) {
+    boolean collectSubMethod(MethodNode node, CollectSubVisitor visitor) {
         BlockStatement contentClosureBlock = getContentClosureBlock(node)
         if (contentClosureBlock == null) {
             return false
