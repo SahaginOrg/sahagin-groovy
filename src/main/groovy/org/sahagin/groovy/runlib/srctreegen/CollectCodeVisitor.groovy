@@ -318,6 +318,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
         String classKey = SrcTreeGeneratorUtils.getClassQualifiedName(leftClass)
         TestClass subClass = subClassTable.getByKey(classKey)
+        // TODO geb specific logic
         if ((subClass != null && subClass instanceof PageClass) ||
             SrcTreeGeneratorUtils.inheritsFromClass(leftClass, "geb.Page")) {
             // ignore left for page type variable assignment

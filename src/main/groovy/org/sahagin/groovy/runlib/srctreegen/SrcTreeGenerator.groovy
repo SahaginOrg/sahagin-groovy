@@ -64,7 +64,8 @@ class SrcTreeGenerator {
         compilation.compile()
         Collection<SourceUnit> sources = compilation.sources.values()
         SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
-        utils.addListener(new CollectGebPageContentListener(utils))
+        utils.addListener(new GebVisitorListener(utils))
+        utils.addListener(new SpockVisitorListener(utils))
 
         // collect root visitor
         CollectRootVisitor beforeRootVisitor = new CollectRootVisitor(utils, CollectPhase.BEFORE)

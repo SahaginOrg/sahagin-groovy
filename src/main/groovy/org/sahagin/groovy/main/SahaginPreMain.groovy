@@ -5,6 +5,7 @@ import java.lang.instrument.Instrumentation
 
 import org.apache.commons.io.FileUtils
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGenerator
+import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.main.SahaginMain
 import org.sahagin.runlib.external.adapter.Adapter
 import org.sahagin.runlib.external.adapter.AdapterContainer
@@ -30,7 +31,7 @@ class SahaginPreMain {
         } else {
             configFilePath = agentArgs
         }
-        Config config = Config.generateFromYamlConfig(new File(configFilePath))
+        GroovyConfig config = GroovyConfig.generateFromYamlConfig(new File(configFilePath))
         AcceptableLocales locales = AcceptableLocales.getInstance(config.getUserLocale())
         AdapterContainer.globalInitialize(locales)
 
@@ -63,7 +64,7 @@ class SahaginPreMain {
         SahaginMain.main(args)
     }
 
-    private static SrcTree generateAndDumpSrcTree(Config config, AcceptableLocales locales) {
+    private static SrcTree generateAndDumpSrcTree(GroovyConfig config, AcceptableLocales locales) {
         // generate and dump srcTree
         SrcTreeGenerator generator = new SrcTreeGenerator()
         File srcTreeFile = CommonPath.srcTreeFile(config.getRootBaseReportIntermediateDataDir())

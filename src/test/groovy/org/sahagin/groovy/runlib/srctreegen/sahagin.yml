@@ -1,0 +1,12 @@
+# If path configuration parameters are relative, 
+# these are handled as relative path from the directory this YAML file exists.
+
+# root directory of test code and related libraries
+groovy:
+  testDir: ../../../../../../resources/org/sahagin/groovy/runlib/srctreegen/SrcTreeGeneratorTestRes/variousData/input
+  testFramework: spock
+
+common:
+  userLocale: ja-JP
+  reportIntermediateDataDir: ../../../../../../../../bin/report-in
+  reportOutputDir: ../../../../../../../../bin/report-out

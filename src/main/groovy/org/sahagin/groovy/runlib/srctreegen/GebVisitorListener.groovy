@@ -25,10 +25,10 @@ import org.sahagin.share.srctree.code.Code
 import org.sahagin.share.srctree.code.UnknownCode
 
 // Geb specific visitor. This visitor collects all page contents and set them to fieldTable
-class CollectGebPageContentListener extends SrcTreeVisitorListener {
+class GebVisitorListener extends SrcTreeVisitorListener {
     private SrcTreeGeneratorUtils utils
 
-    CollectGebPageContentListener(SrcTreeGeneratorUtils utils) {
+    GebVisitorListener(SrcTreeGeneratorUtils utils) {
         this.utils = utils
     }
 

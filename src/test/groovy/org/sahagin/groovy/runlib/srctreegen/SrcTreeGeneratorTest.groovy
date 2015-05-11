@@ -2,6 +2,7 @@ package org.sahagin.groovy.runlib.srctreegen
 
 import org.sahagin.groovy.runlib.external.adapter.geb.GebAdapter
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGenerator
+import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.report.HtmlReport
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.runlib.external.Locale
@@ -15,21 +16,21 @@ class SrcTreeGeneratorTest {
 
     @Test
     void variousData() {
+        GroovyConfig config = GroovyConfig.generateFromYamlConfig(
+            new File("src/test/groovy/org/sahagin/groovy/runlib/srctreegen/sahagin.yml"))
 
-        AdapterContainer.globalInitialize(
-                AcceptableLocales.getInstance(Locale.JA_JP), "junit4")
-        SysMessages.globalInitialize(AcceptableLocales.getInstance(Locale.JA_JP))
+        AcceptableLocales locales = AcceptableLocales.getInstance(config.getUserLocale())
+        AdapterContainer.globalInitialize(locales, config.getTestFramework())
+        SysMessages.globalInitialize(locales)
         new GebAdapter().initialSetAdapter()
 
         // TODO dummy
         SrcTreeGenerator gen = new SrcTreeGenerator(
-            AdapterContainer.globalInstance().getAdditionalTestDocs(), AcceptableLocales.getInstance(Locale.JA_JP))
-        File rootDir = new File("src/test/resources/org/sahagin/groovy/runlib/srctreegen/SrcTreeGeneratorTestRes/variousData/input")
-        SrcTree srcTree = gen.generateWithRuntimeClassPath(rootDir)
-        YamlUtils.dump(srcTree.toYamlObject(), new File("report-in/srcTree"))
+            AdapterContainer.globalInstance().getAdditionalTestDocs(), locales)
+        SrcTree srcTree = gen.generateWithRuntimeClassPath(config.getRootBaseTestDir())
+        YamlUtils.dump(srcTree.toYamlObject(), new File(config.getRootBaseReportIntermediateDataDir(), "srcTree"))
         HtmlReport report = new HtmlReport()
-        report.generate(new File("report-in"), new File("report-out"))
-
+        report.generate(config.getRootBaseReportIntermediateDataDir(), config.getRootBaseReportOutputDir())
     }
 
 }
