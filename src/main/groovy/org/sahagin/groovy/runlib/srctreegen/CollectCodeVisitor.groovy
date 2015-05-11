@@ -31,7 +31,9 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
-import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.CollectPhase
+import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.PageClass
@@ -91,6 +93,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     TestFieldTable getFieldTable() {
         return fieldTable
+    }
+
+    SrcTreeGeneratorUtils getUtils() {
+        return utils
     }
 
     @Override
@@ -429,8 +435,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
+        List<SrcTreeVisitorAdapter> listeners =
+        GroovyAdapterContainer.globalInstance().getSrcTreeVisitorAdapters()
         if (phase == CollectPhase.BEFORE) {
-            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+            for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.beforeCollectCode(node, this)) {
                     break
                 }
@@ -438,7 +446,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             super.visitMethod(node)
             return
         } else if (phase == CollectPhase.AFTER) {
-            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+            for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.afterCollectCode(node, this)) {
                     break
                 }
@@ -446,7 +454,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             super.visitMethod(node)
             return
         } else {
-            for (SrcTreeVisitorListener listener : utils.getListeners()) {
+            for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.collectCode(node, this)) {
                     super.visitMethod(node)
                     return

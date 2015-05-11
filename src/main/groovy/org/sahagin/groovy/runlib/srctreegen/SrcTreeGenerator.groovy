@@ -19,7 +19,7 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.SourceUnit
-import org.sahagin.groovy.runlib.srctreegen.SrcTreeVisitorListener.CollectPhase
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.srctreegen.AdditionalTestDocsSetter
 import org.sahagin.runlib.srctreegen.SrcTreeGenerator.CollectRootRequestor
@@ -64,8 +64,6 @@ class SrcTreeGenerator {
         compilation.compile()
         Collection<SourceUnit> sources = compilation.sources.values()
         SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
-        utils.addListener(new GebVisitorListener(utils))
-        utils.addListener(new SpockVisitorListener(utils))
 
         // collect root visitor
         CollectRootVisitor beforeRootVisitor = new CollectRootVisitor(utils, CollectPhase.BEFORE)

@@ -35,19 +35,9 @@ import org.sahagin.runlib.external.adapter.JavaAdapterContainer
 
 class SrcTreeGeneratorUtils {
     private AdditionalTestDocs additionalTestDocs
-    private List<SrcTreeVisitorListener> listeners
 
     SrcTreeGeneratorUtils(AdditionalTestDocs additionalTestDocs) {
         this.additionalTestDocs = additionalTestDocs
-        this.listeners = new ArrayList<SrcTreeVisitorListener>(4)
-    }
-
-    void addListener(SrcTreeVisitorListener listener) {
-        listeners.add(listener)
-    }
-
-    List<SrcTreeVisitorListener> getListeners() {
-        return listeners
     }
 
     static TestClass getTestClass(String classQualifiedName,

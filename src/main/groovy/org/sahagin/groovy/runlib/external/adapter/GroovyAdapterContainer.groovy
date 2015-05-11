@@ -9,7 +9,8 @@ import org.sahagin.runlib.external.adapter.AdapterContainer
 
 class GroovyAdapterContainer extends AdapterContainer {
     private String acceptableTestFramework = null
-    private GroovyRootMethodAdapter rootMethodAdapter
+    private GroovyRootMethodAdapter rootMethodAdapter = null
+    private List<SrcTreeVisitorAdapter> srcTreeVisitorAdapters = new ArrayList<SrcTreeVisitorAdapter>(4)
 
     // make constructor private
     private GroovyAdapterContainer(AcceptableLocales locales, String acceptableTestFramework) {
@@ -18,7 +19,6 @@ class GroovyAdapterContainer extends AdapterContainer {
             throw new NullPointerException()
         }
         this.acceptableTestFramework = acceptableTestFramework
-        this.rootMethodAdapter = null
     }
 
     // some method call of this class requires initialization before calling the method
@@ -56,6 +56,17 @@ class GroovyAdapterContainer extends AdapterContainer {
 
     public boolean isRootMethod(MethodNode node) {
         return rootMethodAdapter.isRootMethod(node)
+    }
+
+    public void addSrcTreeVisitorAdapter(SrcTreeVisitorAdapter srcTreeVisitorAdapter) {
+        if (srcTreeVisitorAdapter == null) {
+            throw new NullPointerException()
+        }
+        srcTreeVisitorAdapters.add(srcTreeVisitorAdapter)
+    }
+
+    public List<SrcTreeVisitorAdapter> getSrcTreeVisitorAdapters() {
+        return srcTreeVisitorAdapters
     }
 
 }

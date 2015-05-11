@@ -7,6 +7,7 @@ import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.remote.SessionNotFoundException
+import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.external.adapter.Adapter
 import org.sahagin.runlib.external.adapter.AdapterContainer
@@ -18,8 +19,9 @@ class GebAdapter implements Adapter {
 
     @Override
     void initialSetAdapter() {
-        AdapterContainer container = AdapterContainer.globalInstance()
+        GroovyAdapterContainer container = GroovyAdapterContainer.globalInstance()
         container.addAdditionalTestDocsAdapter(new AdditionalTestDocsAdapterImpl())
+        container.addSrcTreeVisitorAdapter(new GebSrcTreeVisitorAdapter())
     }
 
     @Override

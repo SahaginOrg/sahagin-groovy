@@ -1,4 +1,4 @@
-package org.sahagin.groovy.runlib.srctreegen
+package org.sahagin.groovy.runlib.external.adapter.geb
 
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
@@ -16,6 +16,10 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
+import org.sahagin.groovy.runlib.external.adapter.AbstractSrcTreeVisitorAdapter
+import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
+import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
+import org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorUtils
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
@@ -24,15 +28,10 @@ import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.share.srctree.code.Code
 import org.sahagin.share.srctree.code.UnknownCode
 
-// Geb specific visitor. This visitor collects all page contents and set them to fieldTable
-class GebVisitorListener extends SrcTreeVisitorListener {
-    private SrcTreeGeneratorUtils utils
+// This visitor collects all page contents and set them to fieldTable
+class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
-    GebVisitorListener(SrcTreeGeneratorUtils utils) {
-        this.utils = utils
-    }
-
-    // Searches static content initialization block from the specifiec static initializer method node.
+    // Searches static content initialization block from the specific static initializer method node.
     // Returns null if not found
     private BlockStatement getContentClosureBlock(MethodNode node) {
         if (!SrcTreeGeneratorUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
@@ -209,7 +208,7 @@ class GebVisitorListener extends SrcTreeVisitorListener {
         if (testClass == null) {
             testClass = visitor.getSubClassTable().getByKey(classQName)
             if (testClass == null) {
-                testClass = utils.generateTestClass(classNode)
+                testClass = visitor.getUtils().generateTestClass(classNode)
                 visitor.getSubClassTable().addTestClass(testClass)
             }
         }
