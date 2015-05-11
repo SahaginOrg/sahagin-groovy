@@ -32,6 +32,51 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
         this.utils = utils
     }
 
+    // Searches static content initialization block from the specifiec static initializer method node.
+    // Returns null if not found
+    private BlockStatement getContentClosureBlock(MethodNode node) {
+        if (!SrcTreeGeneratorUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
+            return null
+        }
+        // Search static initializer
+        // since content DSL closure logic has been moved to static constructor part by Groovy compiler,
+        if (!node.staticConstructor) {
+            return null
+        }
+        if (!(node.getCode() instanceof BlockStatement)) {
+            return null
+        }
+        List<Statement> blockStatements = (node.getCode() as BlockStatement).getStatements()
+        for (Statement blockStatement : blockStatements) {
+            if (!(blockStatement instanceof ExpressionStatement)) {
+                continue
+            }
+            Expression exp = (blockStatement as ExpressionStatement).getExpression()
+            if (!(exp instanceof BinaryExpression)) {
+                continue
+            }
+            Expression left = (exp as BinaryExpression).getLeftExpression()
+            if (!(left instanceof FieldExpression)) {
+                continue
+            }
+            FieldNode field = (left as FieldExpression).getField()
+            if (!field.isStatic() || field.getName() != "content") {
+                continue
+            }
+            // found "content" property initialization part
+            Expression right = (exp as BinaryExpression).getRightExpression()
+            if (!(right instanceof ClosureExpression)) {
+                continue
+            }
+            Statement closureCode = (right as ClosureExpression).getCode()
+            if (!(closureCode instanceof BlockStatement)) {
+                continue
+            }
+            return (closureCode as BlockStatement)
+        }
+        return null
+    }
+
     // return [testDoc string, content value Expression].
     // return [null, null] if not found
     def getTestDocAndValueFromContent(MethodCallExpression methodCall) {
@@ -87,99 +132,102 @@ class CollectGebPageContentListener extends SrcTreeVisitorListener {
     }
 
     @Override
+    boolean beforeCollectCode(MethodNode node, MethodType type,
+        TestClassTable rootClassTable, TestMethodTable rootMethodTable,
+        TestClassTable subClassTable, TestMethodTable subMethodTable,
+        TestFieldTable fieldTable) {
+        BlockStatement contentClosureBlock = getContentClosureBlock(node)
+        if (contentClosureBlock == null) {
+            return false
+        }
+
+        List<Statement> list = contentClosureBlock.getStatements()
+        // iterate page object content definition
+        for (Statement statement : list) {
+            if (!(statement instanceof ExpressionStatement)) {
+                continue
+            }
+            Expression expression = (statement as ExpressionStatement).getExpression()
+            if (!(expression instanceof MethodCallExpression)) {
+                continue
+            }
+            MethodCallExpression methodCall = (expression as MethodCallExpression)
+            String testDoc
+            Expression fieldValue
+            (testDoc, fieldValue) = getTestDocAndValueFromContent(methodCall)
+            if (testDoc == null) {
+                continue
+            }
+            TestField testField = fieldTable.getByKey(SrcTreeGeneratorUtils.generateFieldKey(
+                node.getDeclaringClass(), methodCall.getMethodAsString()))
+            assert testField != null
+
+            // TODO temporal code.. file value is not always Unknown code..
+            UnknownCode fieldValueCode = new UnknownCode()
+            fieldValueCode.setOriginal(fieldValue.getText())
+            testField.setValue(fieldValueCode)
+        }
+        return true
+    }
+
+    // field value is not set by this method
+    @Override
     boolean beforeCollectSubMethod(MethodNode node, MethodType type,
         TestClassTable rootClassTable, TestClassTable subClassTable,
-        TestMethodTable subMethodTable, TestFieldTable fieldTable) {
-        if (!SrcTreeGeneratorUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
+            TestMethodTable subMethodTable, TestFieldTable fieldTable) {
+        BlockStatement contentClosureBlock = getContentClosureBlock(node)
+        if (contentClosureBlock == null) {
             return false
         }
-        // Search static initializer
-        // since content DSL closure logic has been moved to static constructor part by Groovy compiler,
-        if (!node.staticConstructor) {
-            return false
-        }
-        if (!(node.getCode() instanceof BlockStatement)) {
-            return false
-        }
-        List<Statement> blockStatements = (node.getCode() as BlockStatement).getStatements()
-        for (Statement blockStatement : blockStatements) {
-            if (!(blockStatement instanceof ExpressionStatement)) {
-                continue
-            }
-            Expression exp = (blockStatement as ExpressionStatement).getExpression()
-            if (!(exp instanceof BinaryExpression)) {
-                continue
-            }
-            Expression left = (exp as BinaryExpression).getLeftExpression()
-            if (!(left instanceof FieldExpression)) {
-                continue
-            }
-            FieldNode field = (left as FieldExpression).getField()
-            if (!field.isStatic() || field.getName() != "content") {
-                continue
-            }
-            // found "content" property initialization part
-            Expression right = (exp as BinaryExpression).getRightExpression()
-            if (!(right instanceof ClosureExpression)) {
-                continue
-            }
-            Statement closureCode = (right as ClosureExpression).getCode()
-            if (!(closureCode instanceof BlockStatement)) {
-                continue
-            }
-            List<Statement> list = (closureCode as BlockStatement).getStatements()
-            List<TestField> testFields = new ArrayList<TestField>(list.size())
-            // iterate page object content definition
-            for (Statement statement : list) {
-                if (!(statement instanceof ExpressionStatement)) {
-                    continue
-                }
-                Expression expression = (statement as ExpressionStatement).getExpression()
-                if (!(expression instanceof MethodCallExpression)) {
-                    continue
-                }
-                MethodCallExpression methodCall = (expression as MethodCallExpression)
-                String testDoc
-                Expression fieldValue
-                (testDoc, fieldValue) = getTestDocAndValueFromContent(methodCall)
-                if (testDoc == null) {
-                    continue
-                }
-                TestField testField = new TestField()
-                // each method name will become page object property
-                testField.setSimpleName(methodCall.getMethodAsString())
-                testField.setTestDoc(testDoc)
-                // TODO temporal code.. file value is not always Unknown code..
-                UnknownCode fieldValueCode = new UnknownCode()
-                fieldValueCode.setOriginal(fieldValue.getText())
-                testField.setValue(fieldValueCode)
-                testFields.add(testField)
-            }
 
-            if (testFields.size() == 0) {
+        List<Statement> list = contentClosureBlock.getStatements()
+        List<TestField> testFields = new ArrayList<TestField>(list.size())
+        // iterate page object content definition
+        for (Statement statement : list) {
+            if (!(statement instanceof ExpressionStatement)) {
                 continue
             }
+            Expression expression = (statement as ExpressionStatement).getExpression()
+            if (!(expression instanceof MethodCallExpression)) {
+                continue
+            }
+            MethodCallExpression methodCall = (expression as MethodCallExpression)
+            String testDoc
+            Expression fieldValue
+            (testDoc, fieldValue) = getTestDocAndValueFromContent(methodCall)
+            if (testDoc == null) {
+                continue
+            }
+            TestField testField = new TestField()
+            // each method name will become page object property
+            testField.setSimpleName(methodCall.getMethodAsString())
+            testField.setTestDoc(testDoc)
+            testFields.add(testField)
+        }
 
-            ClassNode classNode = node.getDeclaringClass()
-            String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
-            TestClass testClass = rootClassTable.getByKey(classQName)
+        if (testFields.size() == 0) {
+            return true
+        }
+
+        ClassNode classNode = node.getDeclaringClass()
+        String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
+        TestClass testClass = rootClassTable.getByKey(classQName)
+        if (testClass == null) {
+            testClass = subClassTable.getByKey(classQName)
             if (testClass == null) {
-                testClass = subClassTable.getByKey(classQName)
-                if (testClass == null) {
-                    testClass = utils.generateTestClass(classNode)
-                    subClassTable.addTestClass(testClass)
-                }
+                testClass = utils.generateTestClass(classNode)
+                subClassTable.addTestClass(testClass)
             }
+        }
 
-            for (TestField testField : testFields) {
-                testField.setTestClassKey(testClass.getKey())
-                testField.setTestClass(testClass)
-                testField.setKey(testClass.getKey() + "." + testField.getSimpleName())
-
-                fieldTable.addTestField(testField)
-                testClass.addTestFieldKey(testField.getKey())
-                testClass.addTestField(testField)
-            }
+        for (TestField testField : testFields) {
+            testField.setTestClassKey(testClass.getKey())
+            testField.setTestClass(testClass)
+            testField.setKey(
+                SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.getSimpleName()))
+            fieldTable.addTestField(testField)
+            testClass.addTestFieldKey(testField.getKey())
+            testClass.addTestField(testField)
         }
 
         return true
