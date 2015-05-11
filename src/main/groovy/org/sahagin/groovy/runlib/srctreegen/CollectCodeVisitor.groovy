@@ -98,6 +98,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 if (nonVarLengthMaxIndex > argClasses.size() - 1) {
                     continue // go to next method
                 }
+                if (!isVarLengthArg && (params.length != argClasses.size())) {
+                    // argument length must be the same
+                    continue // go to next method
+                }
 
                 boolean matched = true
 
