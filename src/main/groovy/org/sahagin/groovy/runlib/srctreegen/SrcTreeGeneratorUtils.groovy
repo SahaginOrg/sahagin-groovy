@@ -18,6 +18,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
+import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
 import org.sahagin.runlib.additionaltestdoc.AdditionalPage
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
@@ -30,6 +31,7 @@ import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.runlib.external.TestDoc
 import org.sahagin.runlib.external.Page
+import org.sahagin.runlib.external.adapter.JavaAdapterContainer
 
 class SrcTreeGeneratorUtils {
     private AdditionalTestDocs additionalTestDocs
@@ -111,31 +113,6 @@ class SrcTreeGeneratorUtils {
         return getClassQualifiedName(propClassNode) + "." + propName
     }
 
-    // TODO move this logic to adapter
-    static boolean isRootMethod(MethodNode node) {
-        List<AnnotationNode> annotations = node.annotations
-        if (annotations == null) {
-            return false
-        }
-        if (inheritsFromClass(node.getDeclaringClass(), "spock.lang.Specification")) {
-            for (AnnotationNode annotation : annotations) {
-                ClassNode classNode = annotation.getClassNode()
-                if (classNode.name == "org.spockframework.runtime.model.FeatureMetadata") {
-                    // FeatureMetadata is automatically added to the spock feature method
-                    return true
-                }
-            }
-        } else {
-            for (AnnotationNode annotation : annotations) {
-                ClassNode classNode = annotation.getClassNode()
-                if (classNode.name == "org.junit.Test") {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
     // TODO captureStyle, lang, TestDocs, etc
     private static String getAnnotationValue(
         List<AnnotationNode> annotations, Class<?> annotationClass) {
@@ -200,7 +177,10 @@ class SrcTreeGeneratorUtils {
         return getAnnotationValue(field.getAnnotations(), TestDoc.class)
     }
 
-    // TODO
+    static boolean isRootMethod(MethodNode node) {
+        return GroovyAdapterContainer.globalInstance().isRootMethod(node)
+    }
+
     boolean isSubMethod(MethodNode node) {
         if (isRootMethod(node)) {
             return false

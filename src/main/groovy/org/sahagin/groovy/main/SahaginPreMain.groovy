@@ -4,6 +4,7 @@ import java.io.File
 import java.lang.instrument.Instrumentation
 
 import org.apache.commons.io.FileUtils
+import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGenerator
 import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.main.SahaginMain
@@ -33,7 +34,7 @@ class SahaginPreMain {
         }
         GroovyConfig config = GroovyConfig.generateFromYamlConfig(new File(configFilePath))
         AcceptableLocales locales = AcceptableLocales.getInstance(config.getUserLocale())
-        AdapterContainer.globalInitialize(locales)
+        GroovyAdapterContainer.globalInitialize(locales, "junit4")
 
         // default adapters
         new JUnit4Adapter().initialSetAdapter()
