@@ -47,6 +47,7 @@ class SrcTreeGenerator {
     SrcTree generate(String[] srcFiles, String[] classPathEntries) {
         ClassLoader parentLoader = ClassLoader.getSystemClassLoader()
         GroovyClassLoader groovyLoader = new GroovyClassLoader(parentLoader)
+        // TODO should add class path for each jar?
         for (String classPath : classPathEntries) {
             groovyLoader.addClasspath(classPath)
         }

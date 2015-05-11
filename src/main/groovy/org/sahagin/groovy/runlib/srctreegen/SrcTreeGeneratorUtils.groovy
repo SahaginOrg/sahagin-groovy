@@ -15,6 +15,9 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
 import org.sahagin.runlib.additionaltestdoc.AdditionalPage
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
@@ -91,10 +94,20 @@ class SrcTreeGeneratorUtils {
         if (annotations == null) {
             return false
         }
-        for (AnnotationNode annotation : annotations) {
-            ClassNode classNode = annotation.getClassNode()
-            if (classNode.name == "org.junit.Test") {
-                return true
+        if (inheritsFromClass(node.getDeclaringClass(), "spock.lang.Specification")) {
+            for (AnnotationNode annotation : annotations) {
+                ClassNode classNode = annotation.getClassNode()
+                if (classNode.name == "org.spockframework.runtime.model.FeatureMetadata") {
+                    // FeatureMetadata is automatically added to the spock feature method
+                    return true
+                }
+            }
+        } else {
+            for (AnnotationNode annotation : annotations) {
+                ClassNode classNode = annotation.getClassNode()
+                if (classNode.name == "org.junit.Test") {
+                    return true
+                }
             }
         }
         return false
