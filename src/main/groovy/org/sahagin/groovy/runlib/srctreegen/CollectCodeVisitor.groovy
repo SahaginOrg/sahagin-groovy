@@ -278,10 +278,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
         }
 
-        if (!(arguments instanceof ArgumentListExpression)) {
+        if (!(arguments instanceof TupleExpression)) {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
         }
-        ArgumentListExpression argumentList = arguments as ArgumentListExpression
+        TupleExpression argumentList = arguments as TupleExpression
         List<Code> argCodes = new ArrayList<Code>(argumentList.getExpressions().size())
         List<ClassNode> argClasses = new ArrayList<ClassNode>(argumentList.getExpressions().size())
         for (Expression argExpression : argumentList.getExpressions()) {

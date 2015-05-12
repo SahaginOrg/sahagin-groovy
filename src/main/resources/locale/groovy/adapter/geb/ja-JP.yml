@@ -7,4 +7,5 @@ method:
   geb.navigator.Navigator.value:
     Object: "{this}に「{0}」をセット"
   geb.Page.$:
+    java.util.Map: 要素「{0}」
     String: 要素「{0}」

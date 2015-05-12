@@ -90,6 +90,7 @@ class GebAdapter implements Adapter {
             methodAdd("geb.Browser", "to", "java.lang.Class,Object[]", 1)
             methodAdd("geb.navigator.Navigator", "click")
             methodAdd("geb.navigator.Navigator", "value", "Object")
+            methodAdd("geb.Page", '$', "java.util.Map")
             methodAdd("geb.Page", '$', "String")
         }
     }
