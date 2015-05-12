@@ -55,10 +55,13 @@ class SrcTreeGenerator {
         }
 
         CompilerConfiguration compilerConf = new CompilerConfiguration()
-        // disable spock AST transformation since it makes AST parsing difficult
-        // TODO spock specific logic
-        compilerConf.setDisabledGlobalASTTransformations(
-            new HashSet(["org.spockframework.compiler.SpockTransform"]))
+        // disable geb and spock AST transformations since they makes AST parsing difficult
+        // TODO geb and spock specific logic
+        compilerConf.setDisabledGlobalASTTransformations(new HashSet([
+            "org.spockframework.compiler.SpockTransform",
+            "geb.transform.AttributeAccessingMetaClassRegisteringTransformation",
+            "geb.transform.implicitassertions.ImplicitAssertionsTransformation"
+        ]))
         CompilationUnit compilation = new CompilationUnit(compilerConf, null, groovyLoader)
         compilation.addSources(srcFiles)
         // TODO maybe don't need to execute all phase

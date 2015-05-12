@@ -142,10 +142,14 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         List<Statement> list = contentClosureBlock.getStatements()
         // iterate page object content definition
         for (Statement statement : list) {
-            if (!(statement instanceof ExpressionStatement)) {
+            Expression expression
+            if (statement instanceof ExpressionStatement) {
+                expression = (statement as ExpressionStatement).getExpression()
+            } else if (statement instanceof ReturnStatement) {
+                expression = (statement as ReturnStatement).getExpression()
+            } else {
                 continue
             }
-            Expression expression = (statement as ExpressionStatement).getExpression()
             if (!(expression instanceof MethodCallExpression)) {
                 continue
             }
