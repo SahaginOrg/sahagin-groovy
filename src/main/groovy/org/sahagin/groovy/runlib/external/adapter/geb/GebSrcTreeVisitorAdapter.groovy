@@ -166,8 +166,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
             Code fieldValueCode
             ClassNode fieldValueClass
-            (fieldValueCode, fieldValueClass) = visitor.generateExpressionCode(
-                fieldValue, node.getDeclaringClass())
+            (fieldValueCode, fieldValueClass) =
+            visitor.generateExpressionCode(fieldValue, node)
             // TODO maybe memo concept can be used in many place
             fieldValueCode.setRawASTTypeMemo(fieldValueClass)
             testField.setValue(fieldValueCode)

@@ -45,9 +45,11 @@ import org.sahagin.share.srctree.TestField
 import org.sahagin.share.srctree.TestFieldTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
+import org.sahagin.share.srctree.code.ClassInstance
 import org.sahagin.share.srctree.code.Code
 import org.sahagin.share.srctree.code.CodeLine
 import org.sahagin.share.srctree.code.Field
+import org.sahagin.share.srctree.code.MethodArgument
 import org.sahagin.share.srctree.code.StringCode
 import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.sahagin.share.srctree.code.UnknownCode
@@ -254,7 +256,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // return [Code, ClassNode]
-    def generateMethodInvokeCode(MethodCall methodCall, ClassNode thisClassNode) {
+    def generateMethodInvokeCode(MethodCall methodCall, MethodNode parentMethod) {
         ASTNode receiver = methodCall.getReceiver()
         String methodAsString = methodCall.getMethodAsString()
         Expression arguments = methodCall.getArguments()
@@ -268,7 +270,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 receiverClassNode.getNameWithoutPackage(), receiverClassNode).first()
         } else if (receiver instanceof Expression) {
             (receiverCode, receiverClassNode) = generateExpressionCode(
-                receiver as Expression, thisClassNode)
+                receiver as Expression, parentMethod)
         } else {
             // TODO receiver may be null for constructor..
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
@@ -287,7 +289,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         for (Expression argExpression : argumentList.getExpressions()) {
             Code argCode
             ClassNode argClass
-            (argCode, argClass) = generateExpressionCode(argExpression, thisClassNode)
+            (argCode, argClass) = generateExpressionCode(argExpression, parentMethod)
             argCodes.add(argCode)
             argClasses.add(argClass)
         }
@@ -316,17 +318,17 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [subMethodInvoke, invocationMethodNode.getReturnType()]
     }
 
-    // returns [VarAssing, ClassNode]
-    def generateVarAssignCode(BinaryExpression binary, ClassNode thisClassNode) {
+    // returns [Code, ClassNode]
+    def generateVarAssignCode(BinaryExpression binary, MethodNode parentMethod) {
         Expression left = binary.getLeftExpression()
         Expression right = binary.getRightExpression()
         String original = binary.getText()
         Code rightCode
         ClassNode rightClass
-        (rightCode, rightClass) = generateExpressionCode(right, thisClassNode)
+        (rightCode, rightClass) = generateExpressionCode(right, parentMethod)
         Code leftCode
         ClassNode leftClass
-        (leftCode, leftClass) = generateExpressionCode(left, thisClassNode)
+        (leftCode, leftClass) = generateExpressionCode(left, parentMethod)
 
         String classKey = SrcTreeGeneratorUtils.getClassQualifiedName(leftClass)
         TestClass subClass = subClassTable.getByKey(classKey)
@@ -345,11 +347,12 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [assign, ClassHelper.VOID_TYPE]
     }
 
-    def generateFieldCode(PropertyExpression property, ClassNode thisClassNode) {
+    // returns [Code, ClassNode]
+    def generateFieldCode(PropertyExpression property, MethodNode parentMethod) {
         Expression receiver = property.getObjectExpression()
         Code receiverCode
         ClassNode receiverClass
-        (receiverCode, receiverClass) = generateExpressionCode(receiver, thisClassNode)
+        (receiverCode, receiverClass) = generateExpressionCode(receiver, parentMethod)
         String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(
             receiverClass, property.getPropertyAsString())
         TestField testField = fieldTable.getByKey(fieldKey)
@@ -371,6 +374,23 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [field, fieldType] // TODO maybe getType always returns Object type
     }
 
+    // returns [Code, ClassNode]
+    def generateClassInstanceCode(ClassExpression classExp) {
+        TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
+                SrcTreeGeneratorUtils.getClassQualifiedName(classExp.getType()),
+                rootClassTable, subClassTable)
+        if (testClass != null) {
+            ClassInstance classInstance = new ClassInstance()
+            classInstance.setTestClassKey(testClass.getKey())
+            classInstance.setTestClass(testClass)
+            classInstance.setOriginal(classExp.getText())
+            return [classInstance, ClassHelper.CLASS_Type]
+        } else {
+            return generateUnknownCode(
+                    classExp.getType().getNameWithoutPackage(),  ClassHelper.CLASS_Type)
+        }
+    }
+
     // returns [UnknownCode, ClassNode]
     def generateUnknownCode(String original, ClassNode classNode) {
         UnknownCode unknownCode = new UnknownCode()
@@ -385,7 +405,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // returns [Code, ClassNode]
-    def generateExpressionCode(Expression expression, ClassNode thisClassNode) {
+    def generateExpressionCode(Expression expression, MethodNode parentMethod) {
         if (expression == null) {
             StringCode strCode = new StringCode()
             strCode.setValue(null)
@@ -401,7 +421,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     || binary.getRightExpression() instanceof EmptyExpression) {
                     return generateUnknownCode(expression)
                 } else {
-                    return generateVarAssignCode(binary, thisClassNode)
+                    return generateVarAssignCode(binary, parentMethod)
                 }
             } else {
                 return generateUnknownCode(expression)
@@ -419,29 +439,46 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             }
         } else if (expression instanceof PropertyExpression) {
             PropertyExpression property = expression as PropertyExpression
-            return generateFieldCode(property, thisClassNode)
+            return generateFieldCode(property, parentMethod)
         } else if (expression instanceof MethodCallExpression) {
             // TODO TestStepLabel handling
             MethodCallExpression methodCall = expression as MethodCallExpression
-            return generateMethodInvokeCode(methodCall, thisClassNode)
+            return generateMethodInvokeCode(methodCall, parentMethod)
         } else if (expression instanceof StaticMethodCallExpression) {
             StaticMethodCallExpression methodCall = expression as StaticMethodCallExpression
-            return generateMethodInvokeCode(methodCall, thisClassNode)
+            return generateMethodInvokeCode(methodCall, parentMethod)
         } else if (expression instanceof ConstructorCallExpression) {
             ConstructorCallExpression constructorCall = expression as ConstructorCallExpression
-            return generateMethodInvokeCode(constructorCall, thisClassNode)
-        } else if ((expression instanceof VariableExpression) &&
-            ((expression as VariableExpression).getName() == "this")) {
-            // this keyword
-            Code code = generateUnknownCode(expression).first()
-            return [code, thisClassNode]
+            return generateMethodInvokeCode(constructorCall, parentMethod)
+        } else if (expression instanceof VariableExpression) {
+            VariableExpression variable = expression as VariableExpression
+            if (variable.getName() == "this") {
+                // this keyword
+                Code code = generateUnknownCode(expression).first()
+                return [code, parentMethod.getDeclaringClass()]
+            } else if (variable.getAccessedVariable() instanceof Parameter) {
+                Parameter param = variable.getAccessedVariable() as Parameter
+                int index = -1
+                for (int i = 0; i < parentMethod.getParameters().length; i++) {
+                    if (parentMethod.getParameters()[i].getName() == param.getName()) {
+                        index = i
+                        break
+                    }
+                }
+                if (index == -1) {
+                    return generateUnknownCode(expression)
+                }
+                MethodArgument methodArg = new MethodArgument()
+                methodArg.setArgIndex(index)
+                methodArg.setOriginal(expression.getText())
+                return [methodArg, parentMethod.getParameters()[index].getType()]
+            } else {
+                return generateUnknownCode(expression)
+            }
         } else if (expression instanceof ClassExpression) {
             ClassExpression classExp = expression as ClassExpression
-            // TODO getting original text. this logic is not elegant logic..
-            return generateUnknownCode(
-                expression.getType().getNameWithoutPackage(),  ClassHelper.CLASS_Type)
+            return generateClassInstanceCode(classExp)
         } else {
-            // TODO local var, arg ref, etc
             return generateUnknownCode(expression)
         }
     }
@@ -458,10 +495,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         Code code
         if (statement instanceof ExpressionStatement) {
             Expression expression = (statement as ExpressionStatement).getExpression()
-            code = generateExpressionCode(expression, method.getDeclaringClass()).first()
+            code = generateExpressionCode(expression, method).first()
         } else if (statement instanceof ReturnStatement) {
             Expression expression = (statement as ReturnStatement).getExpression()
-            code = generateExpressionCode(expression, method.getDeclaringClass()).first()
+            code = generateExpressionCode(expression, method).first()
         } else {
             code = new UnknownCode()
         }
