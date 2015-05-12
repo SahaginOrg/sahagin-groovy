@@ -78,7 +78,8 @@ class GebAdapter implements Adapter {
             // delegate setting
             classAdd("geb.junit3.GebTest", "geb.Browser")
             classAdd("geb.junit4.GebTest", "geb.Browser")
-            classAdd("geb.testnggm.GebTest", "geb.Browser")
+            classAdd("geb.spock.GebSpec", "geb.Browser")
+            classAdd("geb.testng.GebTest", "geb.Browser")
             classAdd("geb.Browser", "geb.Page")
         }
 
