@@ -11,6 +11,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
@@ -85,16 +86,23 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
             }
             super.visitMethod(node)
             return
+        }
+
+        MethodType methodType
+        if (utils.isSubMethod(node)) {
+            methodType = MethodType.SUB
         } else {
-            for (SrcTreeVisitorAdapter listener : listeners) {
-                if (listener.collectSubMethod(node, this)) {
-                    super.visitMethod(node)
-                    return
-                }
+            methodType = MethodType.NONE
+        }
+
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            if (listener.collectSubMethod(node, methodType, this)) {
+                super.visitMethod(node)
+                return
             }
         }
 
-        if (!utils.isSubMethod(node)) {
+        if (methodType != MethodType.SUB) {
             super.visitMethod(node)
             return
         }

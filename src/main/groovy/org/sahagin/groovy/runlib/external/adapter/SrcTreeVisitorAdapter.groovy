@@ -1,9 +1,11 @@
 package org.sahagin.groovy.runlib.external.adapter
 
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectRootVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
+import org.sahagin.share.srctree.code.CodeLine
 
 interface SrcTreeVisitorAdapter {
 
@@ -13,40 +15,53 @@ interface SrcTreeVisitorAdapter {
         AFTER
     }
 
+    enum MethodType {
+        ROOT,
+        SUB,
+        NONE
+    }
+
+    // TODO for now, before and after event does not have methodType argument for efficiency
+
     // Called before all CollectRootVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
-    boolean beforeCollectRootMethod(MethodNode node, CollectRootVisitor visitor)
+    boolean beforeCollectRootMethod(MethodNode method, CollectRootVisitor visitor)
 
-    // Called while other CollectRootVisitor method visits.
-    // If returns true, the subsequent visitor or visitor listener logics are skipped
-    boolean collectRootMethod(MethodNode node, CollectRootVisitor visitor)
+    // Called while CollectRootVisitor visits a method.
+    // If returns true, the subsequent visitor or visitor listener logics are skipped for this method
+    boolean collectRootMethod(MethodNode method, MethodType methodType, CollectRootVisitor visitor)
 
     // Called after all CollectRootVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
-    boolean afterCollectRootMethod(MethodNode node, CollectRootVisitor visitor)
+    boolean afterCollectRootMethod(MethodNode method, CollectRootVisitor visitor)
 
     // Called before all CollectSubVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
-    boolean beforeCollectSubMethod(MethodNode node, CollectSubVisitor visitor)
+    boolean beforeCollectSubMethod(MethodNode method, CollectSubVisitor visitor)
 
-    // Called while other CollectSubVisitor method visits.
-    // If returns true, the subsequent visitor or visitor listener logics are skipped
-    boolean collectSubMethod(MethodNode node, CollectSubVisitor visitor)
+    // Called while CollectSubVisitor visits a method.
+    // If returns true, the subsequent visitor or visitor listener logics are skipped for this method
+    boolean collectSubMethod(MethodNode method, MethodType methodType, CollectSubVisitor visitor)
 
     // Called after all CollectSubVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
-    boolean afterCollectSubMethod(MethodNode node, CollectSubVisitor visitor)
+    boolean afterCollectSubMethod(MethodNode method, CollectSubVisitor visitor)
 
     // Called before all CollectCodeVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
-    boolean beforeCollectCode(MethodNode node, CollectCodeVisitor visitor)
+    boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor)
 
-    // Called while other CollectCodeVisitor method visits.
-    // If returns true, the subsequent visitor or visitor listener logics are skipped
-    boolean collectCode(MethodNode node, CollectCodeVisitor visitor)
+    // Called while CollectCodeVisitor visits a method.
+    // If returns true, the subsequent visitor or visitor listener logics are skipped for this statement
+    boolean collectCode(MethodNode method, MethodType methodType, CollectCodeVisitor visitor)
+
+    // Called while CollectCodeVisitor visits a method body statement.
+    // If not empty list is returned, the subsequent visitor or visitor listener logics are skipped
+    List<CodeLine> collectMethodStatementCode(Statement statement, MethodNode method,
+        MethodType methodType, CollectCodeVisitor visitor)
 
     // Called after all CollectCodeVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
-    boolean afterCollectCode(MethodNode node, CollectCodeVisitor visitor)
+    boolean afterCollectCode(MethodNode method, CollectCodeVisitor visitor)
 
 }

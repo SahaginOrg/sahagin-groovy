@@ -10,6 +10,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
@@ -68,16 +69,23 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
             }
             super.visitMethod(node)
             return
+        }
+
+        MethodType methodType
+        if (SrcTreeGeneratorUtils.isRootMethod(node)) {
+            methodType = MethodType.ROOT
         } else {
-            for (SrcTreeVisitorAdapter listener : listeners) {
-                if (listener.collectRootMethod(node, this)) {
-                    super.visitMethod(node)
-                    return
-                }
+            methodType = MethodType.NONE
+        }
+
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            if (listener.collectRootMethod(node, methodType, this)) {
+                super.visitMethod(node)
+                return
             }
         }
 
-        if (!SrcTreeGeneratorUtils.isRootMethod(node)) {
+        if (methodType != MethodType.ROOT) {
             super.visitMethod(node)
             return
         }

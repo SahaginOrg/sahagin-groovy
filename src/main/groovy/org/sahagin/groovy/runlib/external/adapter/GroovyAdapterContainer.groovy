@@ -1,7 +1,6 @@
 package org.sahagin.groovy.runlib.external.adapter
 
 import org.codehaus.groovy.ast.MethodNode
-import org.eclipse.jdt.core.dom.IMethodBinding
 import org.sahagin.runlib.external.adapter.JavaAdapterContainer
 import org.sahagin.runlib.external.adapter.JavaRootMethodAdapter
 import org.sahagin.share.AcceptableLocales

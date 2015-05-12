@@ -26,7 +26,7 @@ class GroovyConfig extends Config {
             config.fromYamlObject(configYamlObj)
         } catch (YamlConvertException e) {
             throw new YamlConvertException(String.format(
-                    INVALID_CONFIG_YAML, yamlConfigFile.getAbsolutePath(), e.getLocalizedMessage()), e)
+            INVALID_CONFIG_YAML, yamlConfigFile.getAbsolutePath(), e.getLocalizedMessage()), e)
         }
         return config
     }

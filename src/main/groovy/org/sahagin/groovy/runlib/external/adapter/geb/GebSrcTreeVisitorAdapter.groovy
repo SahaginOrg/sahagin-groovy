@@ -17,6 +17,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.AbstractSrcTreeVisitorAdapter
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorUtils
@@ -83,7 +84,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return [null, null]
         }
         List<Expression> arguments =
-        (methodCall.getArguments() as ArgumentListExpression).getExpressions()
+                (methodCall.getArguments() as ArgumentListExpression).getExpressions()
         // first argument is option map, second argument is content definition closure
         if (arguments.size() < 2) {
             return [null, null]
@@ -122,7 +123,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             if (!(mapEntry.getValueExpression() instanceof ConstantExpression)) {
                 // TODO throw more user friendly error
                 throw new RuntimeException(
-                    "testDoc value must be constant: " + mapEntry.getValueExpression())
+                "testDoc value must be constant: " + mapEntry.getValueExpression())
             }
             String testDoc = (mapEntry.getValueExpression() as ConstantExpression).getValue().toString()
             return [testDoc, valueExpression]
@@ -156,7 +157,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
                 continue
             }
             TestField testField = visitor.getFieldTable().getByKey(SrcTreeGeneratorUtils.generateFieldKey(
-                node.getDeclaringClass(), methodCall.getMethodAsString()))
+                    node.getDeclaringClass(), methodCall.getMethodAsString()))
             assert testField != null
 
             Code fieldValueCode = visitor.generateExpressionCode(fieldValue, node.getDeclaringClass()).first()
@@ -167,8 +168,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
     // field value is not set by this method
     @Override
-    boolean collectSubMethod(MethodNode node, CollectSubVisitor visitor) {
-        BlockStatement contentClosureBlock = getContentClosureBlock(node)
+    boolean collectSubMethod(MethodNode method, MethodType type, CollectSubVisitor visitor) {
+        BlockStatement contentClosureBlock = getContentClosureBlock(method)
         if (contentClosureBlock == null) {
             return false
         }
@@ -202,7 +203,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return true
         }
 
-        ClassNode classNode = node.getDeclaringClass()
+        ClassNode classNode = method.getDeclaringClass()
         String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
         TestClass testClass = visitor.getRootClassTable().getByKey(classQName)
         if (testClass == null) {
@@ -217,7 +218,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             testField.setTestClassKey(testClass.getKey())
             testField.setTestClass(testClass)
             testField.setKey(
-                SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.getSimpleName()))
+                    SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.getSimpleName()))
             visitor.getFieldTable().addTestField(testField)
             testClass.addTestFieldKey(testField.getKey())
             testClass.addTestField(testField)

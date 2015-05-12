@@ -9,18 +9,22 @@ class TestMainSpec extends GebSpec {
     void B() {}
 
     def Adfafafa() {
-        when: "AAAAAAAAAAA"
+        setup: "SSSSSSS"
+        println "0000000"
+
+        when:
+        "AAAAAAAAAAA"
         println "1111111"
 
         then: "BBBBBBBBBB"
         println "2222222"
         println "3333333"
 
-        when: "CCCCCCCCCCCCCCCCC"
+        when:
+        "CCCCCCCCCCCCCCCCC"
         println "4444444"
 
-        then:
-        println "5555555"
+        then: println "5555555"
         println "6666666"
    }
 

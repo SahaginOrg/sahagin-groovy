@@ -3,6 +3,8 @@ package org.sahagin.groovy.runlib.external.adapter.spock
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.GroovyRootMethodAdapter
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorUtils
@@ -31,6 +33,8 @@ class SpockAdapter implements Adapter {
 
         @Override
         public boolean isRootMethod(MethodNode node) {
+            // node must not be transformed by Spock global AST transformation
+
             List<AnnotationNode> annotations = node.annotations
             if (annotations == null) {
                 return false
@@ -39,13 +43,18 @@ class SpockAdapter implements Adapter {
                 node.getDeclaringClass(), "spock.lang.Specification")) {
                 return false
             }
-            for (AnnotationNode annotation : annotations) {
-                ClassNode classNode = annotation.getClassNode()
-                if (classNode.name == "org.spockframework.runtime.model.FeatureMetadata") {
-                    // FeatureMetadata is automatically added to the spock feature method
+
+            if (!(node.getCode() instanceof BlockStatement)) {
+                return false
+            }
+            List<Statement> statements =(node.getCode() as BlockStatement).getStatements()
+            for (Statement statement : statements) {
+                if (statement.getStatementLabel() != null) {
+                    // method including at least one statement label is handled as feature method
                     return true
                 }
             }
+            return false
         }
 
         @Override

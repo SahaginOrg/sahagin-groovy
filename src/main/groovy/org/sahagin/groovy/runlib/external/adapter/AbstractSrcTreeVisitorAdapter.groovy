@@ -1,54 +1,72 @@
 package org.sahagin.groovy.runlib.external.adapter
 
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.stmt.Statement
+import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectRootVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
+import org.sahagin.share.srctree.code.CodeLine
 
 class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
 
     @Override
-    public boolean beforeCollectRootMethod(MethodNode node, CollectRootVisitor visitor) {
+    boolean beforeCollectRootMethod(MethodNode method,
+            CollectRootVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean collectRootMethod(MethodNode node, CollectRootVisitor visitor) {
+    boolean collectRootMethod(MethodNode method,
+            MethodType methodType, CollectRootVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean afterCollectRootMethod(MethodNode node, CollectRootVisitor visitor) {
+    boolean afterCollectRootMethod(MethodNode method,
+            CollectRootVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean beforeCollectSubMethod(MethodNode node, CollectSubVisitor visitor) {
+    boolean beforeCollectSubMethod(MethodNode method,
+            CollectSubVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean collectSubMethod(MethodNode node, CollectSubVisitor visitor) {
+    boolean collectSubMethod(MethodNode method,
+            MethodType methodType, CollectSubVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean afterCollectSubMethod(MethodNode node, CollectSubVisitor visitor) {
+    boolean afterCollectSubMethod(MethodNode method,
+            CollectSubVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean beforeCollectCode(MethodNode node, CollectCodeVisitor visitor) {
+    boolean beforeCollectCode(MethodNode method,
+            CollectCodeVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean collectCode(MethodNode node, CollectCodeVisitor visitor) {
+    boolean collectCode(MethodNode method,
+            MethodType methodType, CollectCodeVisitor visitor) {
         return false
     }
 
     @Override
-    public boolean afterCollectCode(MethodNode node, CollectCodeVisitor visitor) {
+    List<CodeLine> collectMethodStatementCode(Statement statement,
+            MethodNode method, MethodType methodType, CollectCodeVisitor visitor) {
+        return new ArrayList<CodeLine>(0)
+    }
+
+    @Override
+    boolean afterCollectCode(MethodNode method,
+            CollectCodeVisitor visitor) {
         return false
     }
 
