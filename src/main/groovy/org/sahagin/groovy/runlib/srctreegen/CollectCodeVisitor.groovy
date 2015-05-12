@@ -11,6 +11,7 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.CompileUnit
+import org.codehaus.groovy.ast.DynamicVariable
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -348,30 +349,36 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // returns [Code, ClassNode]
-    def generateFieldCode(PropertyExpression property, MethodNode parentMethod) {
-        Expression receiver = property.getObjectExpression()
-        Code receiverCode
-        ClassNode receiverClass
-        (receiverCode, receiverClass) = generateExpressionCode(receiver, parentMethod)
-        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(
-            receiverClass, property.getPropertyAsString())
+    private def generateFieldCodeSub(String fieldName,
+        ClassNode fieldOwnerType, Code receiverCode, String original, ClassNode fieldVarType) {
+        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(fieldOwnerType, fieldName)
         TestField testField = fieldTable.getByKey(fieldKey)
         if (testField == null) {
-            return generateUnknownCode(property)
+            return generateUnknownCode(original, fieldVarType)
         }
         Field field = new Field()
         field.setFieldKey(testField.getKey())
         field.setField(testField)
         field.setThisInstance(receiverCode)
-        field.setOriginal(property.getText())
+        field.setOriginal(original)
         ClassNode fieldType
         if (testField.getValue() != null && testField.getValue().getRawASTTypeMemo() != null) {
             // TODO maybe memo concept can be used in many place
             fieldType = testField.getValue().getRawASTTypeMemo() as ClassNode
         } else {
-            fieldType = property.getType()
+            fieldType = fieldVarType
         }
         return [field, fieldType] // TODO maybe getType always returns Object type
+    }
+
+    // returns [Code, ClassNode]
+    def generateFieldCode(PropertyExpression property, MethodNode parentMethod) {
+        Expression receiver = property.getObjectExpression()
+        Code receiverCode
+        ClassNode receiverClass
+        (receiverCode, receiverClass) = generateExpressionCode(receiver, parentMethod)
+        return generateFieldCodeSub(property.getPropertyAsString(),
+            receiverClass, receiverCode, property.getText(), property.getType())
     }
 
     // returns [Code, ClassNode]
@@ -472,6 +479,12 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 methodArg.setArgIndex(index)
                 methodArg.setOriginal(expression.getText())
                 return [methodArg, parentMethod.getParameters()[index].getType()]
+            } else if (variable.getAccessedVariable() instanceof DynamicVariable) {
+                // this may be dynamically defined property (such as Geb page object contents),
+                // so try to find testField for this class
+                DynamicVariable dynamicVar = variable.getAccessedVariable() as DynamicVariable
+                return generateFieldCodeSub(dynamicVar.getName(),
+                    parentMethod.getDeclaringClass(), null, expression.getText(), dynamicVar.getType())
             } else {
                 return generateUnknownCode(expression)
             }
