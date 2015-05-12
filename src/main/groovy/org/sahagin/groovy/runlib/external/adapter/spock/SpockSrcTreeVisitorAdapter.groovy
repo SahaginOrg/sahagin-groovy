@@ -14,6 +14,7 @@ import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.AbstractSrcTreeVisitorAdapter
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
@@ -35,24 +36,35 @@ class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return null
         }
 
+        String blockText = null
         if (statement instanceof ExpressionStatement) {
             Expression expression = (statement as ExpressionStatement).getExpression()
             if (expression instanceof ConstantExpression) {
                 // ConstantExpression statement with label corresponds to block label text
-                String blockText = (String) (expression as ConstantExpression).getValue()
-                assert blockText != null
-                assert blockText != ""
-                TestStepLabel testStepLabel = new TestStepLabel()
-                testStepLabel.setLabel(statement.getStatementLabel())
-                testStepLabel.setText(blockText)
-                testStepLabel.setOriginal(statement.getStatementLabel() + ": " + blockText)
-
-                CodeLine testStepLabelLine = new CodeLine()
-                testStepLabelLine.setStartLine(-1)
-                testStepLabelLine.setEndLine(-1)
-                testStepLabelLine.setCode(testStepLabel)
-                return [testStepLabelLine]
+                blockText = (String) (expression as ConstantExpression).getValue()
+                assert blockText != null && blockText != ""
             }
+        } else if (statement instanceof ReturnStatement) {
+            // last line block label can be ReturnStatement
+            Expression expression = (statement as ReturnStatement).getExpression()
+            if (expression instanceof ConstantExpression) {
+                // ConstantExpression statement with label corresponds to block label text
+                blockText = (String) (expression as ConstantExpression).getValue()
+                assert blockText != null && blockText != ""
+            }
+        }
+
+        if (blockText != null) {
+            TestStepLabel testStepLabel = new TestStepLabel()
+            testStepLabel.setLabel(statement.getStatementLabel())
+            testStepLabel.setText(blockText)
+            testStepLabel.setOriginal(statement.getStatementLabel() + ": " + blockText)
+
+            CodeLine testStepLabelLine = new CodeLine()
+            testStepLabelLine.setStartLine(-1)
+            testStepLabelLine.setEndLine(-1)
+            testStepLabelLine.setCode(testStepLabel)
+            return [testStepLabelLine]
         }
 
         // no text block label and block first statement

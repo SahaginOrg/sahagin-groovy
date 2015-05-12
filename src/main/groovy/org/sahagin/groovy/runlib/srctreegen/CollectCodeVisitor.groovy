@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
@@ -450,6 +451,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         Code code
         if (statement instanceof ExpressionStatement) {
             Expression expression = (statement as ExpressionStatement).getExpression()
+            code = generateExpressionCode(expression, method.getDeclaringClass()).first()
+        } else if (statement instanceof ReturnStatement) {
+            Expression expression = (statement as ReturnStatement).getExpression()
             code = generateExpressionCode(expression, method.getDeclaringClass()).first()
         } else {
             code = new UnknownCode()
