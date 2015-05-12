@@ -131,7 +131,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         return [null, null]
     }
 
-    // collect all page object content values before collecting other codes
+    // collect all page object content values and types before collecting other codes
     @Override
     boolean beforeCollectCode(MethodNode node, CollectCodeVisitor visitor) {
         BlockStatement contentClosureBlock = getContentClosureBlock(node)
@@ -160,7 +160,12 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
                     node.getDeclaringClass(), methodCall.getMethodAsString()))
             assert testField != null
 
-            Code fieldValueCode = visitor.generateExpressionCode(fieldValue, node.getDeclaringClass()).first()
+            Code fieldValueCode
+            ClassNode fieldValueClass
+            (fieldValueCode, fieldValueClass) = visitor.generateExpressionCode(
+                fieldValue, node.getDeclaringClass())
+            // TODO maybe memo concept can be used in many place
+            fieldValueCode.setRawASTTypeMemo(fieldValueClass)
             testField.setValue(fieldValueCode)
         }
         return true
@@ -178,10 +183,14 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         List<TestField> testFields = new ArrayList<TestField>(list.size())
         // iterate page object content definition
         for (Statement statement : list) {
-            if (!(statement instanceof ExpressionStatement)) {
+            Expression expression
+            if (statement instanceof ExpressionStatement) {
+                expression = (statement as ExpressionStatement).getExpression()
+            } else if (statement instanceof ReturnStatement) {
+                expression = (statement as ReturnStatement).getExpression()
+            } else {
                 continue
             }
-            Expression expression = (statement as ExpressionStatement).getExpression()
             if (!(expression instanceof MethodCallExpression)) {
                 continue
             }

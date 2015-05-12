@@ -361,7 +361,14 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         field.setField(testField)
         field.setThisInstance(receiverCode)
         field.setOriginal(property.getText())
-        return [field, property.getType()] // TODO maybe getType always returns Object type
+        ClassNode fieldType
+        if (testField.getValue().getRawASTTypeMemo() != null) {
+            // TODO maybe memo concept can be used in many place
+            fieldType = testField.getValue().getRawASTTypeMemo() as ClassNode
+        } else {
+            fieldType = property.getType()
+        }
+        return [field, fieldType] // TODO maybe getType always returns Object type
     }
 
     // returns [UnknownCode, ClassNode]
