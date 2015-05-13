@@ -5,11 +5,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <groupId>org.sahagin</groupId>
-  <artifactId>sahagin-groovy</artifactId>
+  <artifactId>sahagin-groovy-parent</artifactId>
   <version>0.8.99.3-SNAPSHOT</version>
-  <packaging>jar</packaging>
-  <name>Sahagin Groovy</name>
-  <description>Sahagin makes your Selenium script more readable and maintainable.</description>
+  <packaging>pom</packaging>
+  <name>Sahagin Groovy Parent</name>
+  <description>This is Sahagin Groovy internal module.</description>
   <url>https://github.com/SahaginOrg/sahagin-groovy</url>
   <licenses>
     <license>
@@ -36,94 +36,40 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
-  <dependencies>
-    <dependency>
-      <groupId>org.codehaus.groovy</groupId>
-      <artifactId>groovy-all</artifactId>
-      <version>2.4.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.gebish</groupId>
-      <artifactId>geb-core</artifactId>
-      <version>0.10.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.sahagin</groupId>
-      <artifactId>sahagin</artifactId>
-      <version>0.8.99.3-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.spockframework</groupId>
-      <artifactId>spock-core</artifactId>
-      <version>1.0-groovy-2.4</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.gebish</groupId>
-      <artifactId>geb-junit4</artifactId>
-      <version>0.10.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.gebish</groupId>
-      <artifactId>geb-spock</artifactId>
-      <version>0.10.0</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+  
+  <modules>
+    <module>sahagin-groovy-no-ast-transform</module>
+    <module>sahagin-groovy</module>
+  </modules>
   
   <build>
-  
-  <plugins>
-   <plugin>
-    <groupId>org.codehaus.groovy</groupId>
-    <artifactId>groovy-eclipse-compiler</artifactId>
-    <version>2.9.2-01</version>
-    <extensions>true</extensions>
-  </plugin>
-    <plugin>
-    <groupId>org.apache.maven.plugins</groupId>  
-    <artifactId>maven-compiler-plugin</artifactId>
-    <version>3.2</version>
-    <configuration>
-      <compilerId>groovy-eclipse-compiler</compilerId>
-    </configuration>
-    <dependencies>
-      <dependency>
+    <plugins>
+      <plugin>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-eclipse-compiler</artifactId>
         <version>2.9.2-01</version>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.groovy</groupId>
-        <artifactId>groovy-eclipse-batch</artifactId>
-        <version>2.4.3-01</version>
-      </dependency>
-    </dependencies>
-  </plugin>
-    
-    
-   <!-- <plugin>
-            <groupId>org.codehaus.gmaven</groupId>
-            <artifactId>gmaven-plugin</artifactId>
-				<version>1.5</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>generateStubs</goal>
-                        <goal>compile</goal>
-                        <goal>generateTestStubs</goal>
-                        <goal>testCompile</goal>
-                    </goals>
-                </execution>
-            </executions>
-      </plugin> -->
+        <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>  
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
+        <configuration>
+          <compilerId>groovy-eclipse-compiler</compilerId>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-compiler</artifactId>
+            <version>2.9.2-01</version>
+          </dependency>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-batch</artifactId>
+            <version>2.4.3-01</version>
+          </dependency>
+        </dependencies>
+      </plugin>
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
