@@ -48,6 +48,7 @@
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-eclipse-compiler</artifactId>
         <version>2.9.2-01</version>
+        <!-- to make Groovy directory compile target -->
         <extensions>true</extensions>
       </plugin>
       <plugin>
