@@ -31,12 +31,12 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.Phases
 
-class SrcTreeGenerator {
+class GroovySrcTreeGenerator {
     private AdditionalTestDocs additionalTestDocs
     private AcceptableLocales locales
 
     // additionalTestDocs can be null
-    SrcTreeGenerator(AdditionalTestDocs additionalTestDocs, AcceptableLocales locales) {
+    GroovySrcTreeGenerator(AdditionalTestDocs additionalTestDocs, AcceptableLocales locales) {
         if (additionalTestDocs == null) {
             // use empty additionalTestDocs
             this.additionalTestDocs = new AdditionalTestDocs()

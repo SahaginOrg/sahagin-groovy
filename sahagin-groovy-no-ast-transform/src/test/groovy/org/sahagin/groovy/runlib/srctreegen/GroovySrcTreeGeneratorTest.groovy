@@ -5,7 +5,7 @@ import org.sahagin.groovy.runlib.external.adapter.geb.GebAdapter
 import org.sahagin.groovy.runlib.external.adapter.javalib.GroovyJavaLibAdapter
 import org.sahagin.groovy.runlib.external.adapter.junit4.GroovyJUnit4Adapter
 import org.sahagin.groovy.runlib.external.adapter.spock.SpockAdapter
-import org.sahagin.groovy.runlib.srctreegen.SrcTreeGenerator
+import org.sahagin.groovy.runlib.srctreegen.GroovySrcTreeGenerator
 import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.report.HtmlReport
 import org.sahagin.runlib.external.adapter.Adapter
@@ -17,7 +17,7 @@ import org.sahagin.share.srctree.SrcTree
 import org.junit.Test
 import org.sahagin.share.yaml.YamlUtils
 
-class SrcTreeGeneratorTest {
+class GroovySrcTreeGeneratorTest {
 
     @Test
     void variousData() {
@@ -45,7 +45,7 @@ class SrcTreeGeneratorTest {
         }
 
         // TODO dummy
-        SrcTreeGenerator gen = new SrcTreeGenerator(
+        GroovySrcTreeGenerator gen = new GroovySrcTreeGenerator(
             AdapterContainer.globalInstance().getAdditionalTestDocs(), locales)
 
         if (!GroovyAdapterContainer.globalInstance().isRootMethodAdapterSet()) {
