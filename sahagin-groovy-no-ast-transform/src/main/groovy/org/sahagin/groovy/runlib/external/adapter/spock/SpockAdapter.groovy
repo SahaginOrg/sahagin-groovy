@@ -35,11 +35,6 @@ class SpockAdapter implements Adapter {
         @Override
         public boolean isRootMethod(MethodNode node) {
             // node must not be transformed by Spock global AST transformation
-
-            List<AnnotationNode> annotations = node.annotations
-            if (annotations == null) {
-                return false
-            }
             if (!GroovyASTUtils.inheritsFromClass(
                 node.getDeclaringClass(), "spock.lang.Specification")) {
                 return false
