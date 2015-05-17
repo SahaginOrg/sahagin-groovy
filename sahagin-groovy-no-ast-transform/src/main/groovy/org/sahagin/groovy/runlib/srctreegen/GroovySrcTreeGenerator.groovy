@@ -1,6 +1,7 @@
 package org.sahagin.groovy.runlib.srctreegen
 
 import java.util.Map
+import java.util.concurrent.Phaser;
 import java.util.regex.Pattern
 
 import org.apache.commons.io.FileUtils
@@ -65,12 +66,12 @@ class GroovySrcTreeGenerator {
         ]))
         CompilationUnit compilation = new CompilationUnit(compilerConf, null, groovyLoader)
         compilation.addSources(srcFiles)
-        // TODO maybe don't need to execute all phase
-        // maybe this works if Phase.CANONICALIZATION is specified
+        // TODO maybe don't need to execute to CLASS_GENERATION phase,
+        // maybe this works even if Phase.CANONICALIZATION is specified
         // (when Phase.CANONICALIZATION is specified, page content value closure
         // is not moved to static initializer part, so you must change CollectGebPageContentVisitor
         // logic)
-        compilation.compile()
+        compilation.compile(Phases.CLASS_GENERATION)
         Collection<SourceUnit> sources = compilation.sources.values()
         SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
 

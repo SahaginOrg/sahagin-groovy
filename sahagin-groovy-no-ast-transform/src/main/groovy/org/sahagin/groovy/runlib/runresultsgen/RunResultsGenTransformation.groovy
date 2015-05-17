@@ -6,6 +6,7 @@ import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -15,9 +16,11 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.CatchStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.ASTTransformation
@@ -79,7 +82,6 @@ class RunResultsGenTransformation implements ASTTransformation {
     }
     
     private ConstantExpression lineExp(Statement statement) {
-        println "line: (" + statement.getLineNumber() + "," + statement.getLastLineNumber() + "): " + statement
         return new ConstantExpression(statement.getLineNumber())
     }
     
@@ -87,13 +89,22 @@ class RunResultsGenTransformation implements ASTTransformation {
         return new ConstantExpression(statement.getLastLineNumber())
     }
     
+    private VariableExpression throwableVarExp() {
+        return new VariableExpression("e", new ClassNode(Throwable.class))
+    }
+    
     private Statement initializeStatement() {
         return hookStatement("initialize", null)
     }
 
     private Statement beforeMethodHookStatement(
-        ConstantExpression classExp, ConstantExpression methodExp) {
-        return hookStatement("beforeMethodHook", [classExp, methodExp])
+        ConstantExpression classExp, ConstantExpression methodExp, ConstantExpression actualMethodExp) {
+        return hookStatement("beforeMethodHook", [classExp, methodExp, actualMethodExp])
+    }
+        
+    private Statement methodErrorHookStatement(
+        ConstantExpression classExp, ConstantExpression methodExp, VariableExpression throwableExp) {
+        return hookStatement("methodErrorHook", [classExp, methodExp, throwableExp])
     }
     
     private Statement afterMethodHookStatement(
@@ -109,7 +120,7 @@ class RunResultsGenTransformation implements ASTTransformation {
     }
     
     void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
-        println "call visit: " + sourceUnit.name
+        VariableExpression throwableExp = throwableVarExp()
         for (ASTNode astNode : astNodes) {
             if (astNode instanceof ModuleNode) {
                 for (ClassNode classNode : (astNode as ModuleNode).getClasses()) {
@@ -124,7 +135,7 @@ class RunResultsGenTransformation implements ASTTransformation {
                             BlockStatement tryStatement = new BlockStatement()
                             tryStatement.setVariableScope(block.getVariableScope())
                             tryStatement.addStatement(initializeStatement())
-                            tryStatement.addStatement(beforeMethodHookStatement(classExp, methodExp))
+                            tryStatement.addStatement(beforeMethodHookStatement(classExp, methodExp, actualMethodExp))
                             for (Statement line : block.getStatements()) {
                                 tryStatement.addStatement(line)
                                 if (line.getLineNumber() == -1 || line.getLastLineNumber() == -1) {
@@ -136,15 +147,28 @@ class RunResultsGenTransformation implements ASTTransformation {
                                 tryStatement.addStatement(beforeCodeLineHookStatement(
                                     classExp, methodExp, actualMethodExp, argExp, lineExp, actualLineExp))
                             }
+                            
+                            BlockStatement catchBlockStatement = new BlockStatement()
+                            catchBlockStatement.setVariableScope(block.getVariableScope())
+                            catchBlockStatement.addStatements(
+                                    [initializeStatement(),
+                                        methodErrorHookStatement(classExp, methodExp, throwableExp),
+                                        new ThrowStatement(throwableExp)])
+                            Parameter expceptionParam = new Parameter(new ClassNode(Throwable.class), "e")
+                            CatchStatement catchStatement = new CatchStatement(expceptionParam, catchBlockStatement)
 
                             BlockStatement finallyStatement = new BlockStatement()
                             finallyStatement.setVariableScope(block.getVariableScope())
                             finallyStatement.addStatements(
                                     [initializeStatement(), afterMethodHookStatement(classExp, methodExp)])
 
+                            TryCatchStatement tryCatchStatement =
+                            new TryCatchStatement(tryStatement, finallyStatement)
+                            tryCatchStatement.addCatch(catchStatement)
+                            
                             BlockStatement newBlock = new BlockStatement()
                             newBlock.setVariableScope(block.getVariableScope())
-                            newBlock.addStatement(new TryCatchStatement(tryStatement, finallyStatement))
+                            newBlock.addStatement(tryCatchStatement)
                             methodNode.setCode(newBlock)
                         }
                     }
