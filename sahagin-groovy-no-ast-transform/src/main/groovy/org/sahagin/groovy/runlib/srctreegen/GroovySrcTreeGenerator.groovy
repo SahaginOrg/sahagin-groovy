@@ -55,9 +55,10 @@ class GroovySrcTreeGenerator {
         }
 
         CompilerConfiguration compilerConf = new CompilerConfiguration()
-        // disable geb and spock AST transformations since they makes AST parsing difficult
+        // disable geb, spock, sahagin-groovy itself AST transformations since they makes AST parsing difficult
         // TODO geb and spock specific logic
         compilerConf.setDisabledGlobalASTTransformations(new HashSet([
+            "org.sahagin.groovy.runlib.runresultsgen.RunResultsGenTransformation",
             "org.spockframework.compiler.SpockTransform",
             "geb.transform.AttributeAccessingMetaClassRegisteringTransformation",
             "geb.transform.implicitassertions.ImplicitAssertionsTransformation"
