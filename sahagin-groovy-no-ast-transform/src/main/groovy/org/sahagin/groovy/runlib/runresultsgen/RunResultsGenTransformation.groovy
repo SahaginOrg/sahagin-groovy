@@ -2,36 +2,112 @@ package org.sahagin.groovy.runlib.runresultsgen
 
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotatedNode
+import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.control.CompilePhase
+import org.sahagin.groovy.share.GroovyASTUtils;
+import org.sahagin.share.srctree.TestMethod
 
+// must be called after spock AST transformation
 // TODO how to disable sahagin without removing sahagin-groovy from the dependency
 // TODO throw error if javaagent option is also specified
-@GroovyASTTransformation(phase=CompilePhase.CONVERSION)
+// TODO later phase than CANONICALIZATION maybe better
+@GroovyASTTransformation(phase=CompilePhase.CANONICALIZATION)
 class RunResultsGenTransformation implements ASTTransformation {
     
-    Statement createPrintlnStatement(str) {
-      VariableExpression thisExp = new VariableExpression("this")
-      ConstantExpression argConstant = new ConstantExpression(str)
-      ArgumentListExpression args = new ArgumentListExpression()
-      args.addExpression(argConstant)        
-      MethodCallExpression methodCall = new MethodCallExpression(thisExp, "println", args)
-      return new ExpressionStatement(methodCall)
+    private Statement hookStatement(String methodName, List<Expression> args) {
+        ClassNode classExpType = new ClassNode(GroovyHookMethodDef.class)
+        ClassExpression classExp = new ClassExpression(classExpType)
+        ArgumentListExpression argList
+        if (args == null) {
+            argList = ArgumentListExpression.EMPTY_ARGUMENTS
+        } else {
+            argList = new ArgumentListExpression(args)
+        }
+        MethodCallExpression methodCall = new MethodCallExpression(classExp, methodName, argList)
+        return new ExpressionStatement(methodCall)
+    }
+    
+    private ConstantExpression classQualifiedNameExp(MethodNode methodNode) {
+        String classQualifiedName = GroovyASTUtils.getClassQualifiedName(methodNode.getDeclaringClass())
+        return new ConstantExpression(classQualifiedName)
+    }
+    
+    private ConstantExpression methodSimpleNameExp(MethodNode methodNode) {
+        // TODO spock spefic logic
+        AnnotationNode featureMetaData = GroovyASTUtils.getAnnotationNode(
+            methodNode.getAnnotations(), "org.spockframework.runtime.model.FeatureMetadata")
+        if (featureMetaData == null) {
+            // not spock feature method
+            return new ConstantExpression(methodNode.getName())
+        }
+        Expression nameExpression = featureMetaData.getMember("name")
+        if (!(nameExpression instanceof ConstantExpression)) {
+            // not valid spock feature method
+            return new ConstantExpression(methodNode.getName())
+        }
+        Object originalMethodName = (nameExpression as ConstantExpression).getValue()
+        return new ConstantExpression(originalMethodName)
+    }
+    
+    private ConstantExpression actualMethodSimpleNameExp(MethodNode methodNode) {
+        return new ConstantExpression(methodNode.getName())
+    }
+    
+    private ConstantExpression argClassesStrExp(MethodNode methodNode) {
+        String argClassesStr = TestMethod.argClassQualifiedNamesToArgClassesStr(
+            GroovyASTUtils.getArgClassQualifiedNames(methodNode))
+        return new ConstantExpression(argClassesStr)   
+    }
+    
+    private ConstantExpression lineExp(Statement statement) {
+        println "line: (" + statement.getLineNumber() + "," + statement.getLastLineNumber() + "): " + statement
+        return new ConstantExpression(statement.getLineNumber())
+    }
+    
+    private ConstantExpression actualLineExp(Statement statement) {
+        return new ConstantExpression(statement.getLastLineNumber())
+    }
+    
+    private Statement initializeStatement() {
+        return hookStatement("initialize", null)
     }
 
+    private Statement beforeMethodHookStatement(
+        ConstantExpression classExp, ConstantExpression methodExp) {
+        return hookStatement("beforeMethodHook", [classExp, methodExp])
+    }
+    
+    private Statement afterMethodHookStatement(
+        ConstantExpression classExp, ConstantExpression methodExp) {
+        return hookStatement("afterMethodHook", [classExp, methodExp])
+    }
+    
+    private Statement beforeCodeLineHookStatement(
+        ConstantExpression classExp, ConstantExpression methodExp, ConstantExpression actualMethodExp, 
+        ConstantExpression argExp, ConstantExpression lineExp, ConstantExpression actualLineExp) {
+        return hookStatement("beforeCodeLineHook", 
+            [classExp, methodExp, actualMethodExp, argExp, lineExp, actualLineExp]);
+    }
+    
     void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
         println "call visit: " + sourceUnit.name
         for (ASTNode astNode : astNodes) {
@@ -40,8 +116,36 @@ class RunResultsGenTransformation implements ASTTransformation {
                     for (MethodNode methodNode : classNode.getMethods()) {
                         if (methodNode.getCode() instanceof BlockStatement) {
                             BlockStatement block = methodNode.getCode() as BlockStatement
-                            List<Statement> statements = (methodNode.getCode() as BlockStatement).getStatements()
-                            statements.add(statements.size() - 2, createPrintlnStatement("before last"));
+                            ConstantExpression classExp = classQualifiedNameExp(methodNode)
+                            ConstantExpression methodExp = methodSimpleNameExp(methodNode)
+                            ConstantExpression actualMethodExp = actualMethodSimpleNameExp(methodNode)
+                            ConstantExpression argExp = argClassesStrExp(methodNode)
+                                                    
+                            BlockStatement tryStatement = new BlockStatement()
+                            tryStatement.setVariableScope(block.getVariableScope())
+                            tryStatement.addStatement(initializeStatement())
+                            tryStatement.addStatement(beforeMethodHookStatement(classExp, methodExp))
+                            for (Statement line : block.getStatements()) {
+                                tryStatement.addStatement(line)
+                                if (line.getLineNumber() == -1 || line.getLastLineNumber() == -1) {
+                                    // skip no line statement (maybe this line has been generated by the compiler)
+                                    continue
+                                }
+                                ConstantExpression lineExp = lineExp(line)
+                                ConstantExpression actualLineExp = actualLineExp(line)
+                                tryStatement.addStatement(beforeCodeLineHookStatement(
+                                    classExp, methodExp, actualMethodExp, argExp, lineExp, actualLineExp))
+                            }
+
+                            BlockStatement finallyStatement = new BlockStatement()
+                            finallyStatement.setVariableScope(block.getVariableScope())
+                            finallyStatement.addStatements(
+                                    [initializeStatement(), afterMethodHookStatement(classExp, methodExp)])
+
+                            BlockStatement newBlock = new BlockStatement()
+                            newBlock.setVariableScope(block.getVariableScope())
+                            newBlock.addStatement(new TryCatchStatement(tryStatement, finallyStatement))
+                            methodNode.setCode(newBlock)
                         }
                     }
                 }

@@ -32,6 +32,7 @@ class SpockAdapter implements Adapter {
             this.name = name
         }
 
+        // TODO ignore setup, cleanup method, etc
         @Override
         public boolean isRootMethod(MethodNode node) {
             // node must not be transformed by Spock global AST transformation

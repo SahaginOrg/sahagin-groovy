@@ -146,10 +146,12 @@ class GroovyHookMethodDef {
     }
 
     public static void beforeCodeLineHook(String hookedClassQualifiedName, String hookedMethodSimpleName,
-            String hookedArgClassesStr, int line, int actualInsertedLine) {
+            String actualHookedMethodSimpleName, String hookedArgClassesStr, 
+            int hookedLine, int actualhookedLine) {
         initializedCheck();
         manager.beforeCodeLineHook(hookedClassQualifiedName,
-                hookedMethodSimpleName, hookedArgClassesStr, line, actualInsertedLine);
+                hookedMethodSimpleName, actualHookedMethodSimpleName, 
+                hookedArgClassesStr, hookedLine, actualhookedLine);
     }
 
 }
