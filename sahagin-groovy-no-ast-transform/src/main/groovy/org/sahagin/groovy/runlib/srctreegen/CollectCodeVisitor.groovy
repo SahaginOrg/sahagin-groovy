@@ -37,6 +37,7 @@ import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
+import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.PageClass
@@ -185,7 +186,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode getDelegateToClassNode(ClassNode classNode) {
         TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
-            SrcTreeGeneratorUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
+            GroovyASTUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
         if (testClass == null) {
             return null
         }
@@ -313,8 +314,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             subMethodInvoke.addArg(argCode)
         }
         subMethodInvoke.setChildInvoke(
-            SrcTreeGeneratorUtils.getClassQualifiedName(invocationMethodNode.getDeclaringClass()) !=
-            SrcTreeGeneratorUtils.getClassQualifiedName(receiverClassNode))
+            GroovyASTUtils.getClassQualifiedName(invocationMethodNode.getDeclaringClass()) !=
+            GroovyASTUtils.getClassQualifiedName(receiverClassNode))
         subMethodInvoke.setOriginal(original)
         return [subMethodInvoke, invocationMethodNode.getReturnType()]
     }
@@ -331,11 +332,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         ClassNode leftClass
         (leftCode, leftClass) = generateExpressionCode(left, parentMethod)
 
-        String classKey = SrcTreeGeneratorUtils.getClassQualifiedName(leftClass)
+        String classKey = GroovyASTUtils.getClassQualifiedName(leftClass)
         TestClass subClass = subClassTable.getByKey(classKey)
         // TODO geb specific logic
         if ((subClass != null && subClass instanceof PageClass) ||
-            SrcTreeGeneratorUtils.inheritsFromClass(leftClass, "geb.Page")) {
+            GroovyASTUtils.inheritsFromClass(leftClass, "geb.Page")) {
             // ignore left for page type variable assignment
             // since usually page type variable is not used in other TestDoc
             return [rightCode, rightClass]
@@ -384,7 +385,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns [Code, ClassNode]
     def generateClassInstanceCode(ClassExpression classExp) {
         TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
-                SrcTreeGeneratorUtils.getClassQualifiedName(classExp.getType()),
+                GroovyASTUtils.getClassQualifiedName(classExp.getType()),
                 rootClassTable, subClassTable)
         if (testClass != null) {
             ClassInstance classInstance = new ClassInstance()

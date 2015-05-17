@@ -8,6 +8,7 @@ import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.GroovyRootMethodAdapter
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorUtils
+import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.runlib.external.adapter.Adapter
 
 class SpockAdapter implements Adapter {
@@ -39,7 +40,7 @@ class SpockAdapter implements Adapter {
             if (annotations == null) {
                 return false
             }
-            if (!SrcTreeGeneratorUtils.inheritsFromClass(
+            if (!GroovyASTUtils.inheritsFromClass(
                 node.getDeclaringClass(), "spock.lang.Specification")) {
                 return false
             }

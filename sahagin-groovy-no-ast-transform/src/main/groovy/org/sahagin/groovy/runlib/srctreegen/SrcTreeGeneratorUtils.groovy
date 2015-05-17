@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
+import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
 import org.sahagin.runlib.additionaltestdoc.AdditionalPage
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
@@ -69,28 +70,10 @@ class SrcTreeGeneratorUtils {
         return testMethod
     }
 
-    static String getClassQualifiedName(ClassNode classNode) {
-        if (classNode.isArray()) {
-            return getClassQualifiedName(classNode.getComponentType()) + "[]"
-        } else {
-            return classNode.getName()
-        }
-    }
-
-    private static List<String> getArgClassQualifiedNames(MethodNode method) {
-        // TODO parameterized etc
-
-        List<String> result = new ArrayList<String>(method.getParameters().length)
-        for (Parameter param : method.getParameters()) {
-            result.add(getClassQualifiedName(param.getType()))
-        }
-        return result
-    }
-
     static String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
-        String classQualifiedName = getClassQualifiedName(method.getDeclaringClass())
+        String classQualifiedName = GroovyASTUtils.getClassQualifiedName(method.getDeclaringClass())
         String methodSimpleName = method.getName()
-        List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
+        List<String> argClassQualifiedNames = GroovyASTUtils.getArgClassQualifiedNames(method)
         if (noArgClassesStr) {
             return TestMethod.generateMethodKey(classQualifiedName, methodSimpleName)
         } else {
@@ -100,25 +83,36 @@ class SrcTreeGeneratorUtils {
     }
 
     static String generateFieldKey(ClassNode propClassNode, String propName) {
-        return getClassQualifiedName(propClassNode) + "." + propName
+        return GroovyASTUtils.getClassQualifiedName(propClassNode) + "." + propName
     }
 
-    // TODO captureStyle, lang, TestDocs, etc
-    private static String getAnnotationValue(
-        List<AnnotationNode> annotations, Class<?> annotationClass) {
+    // returns null if not found
+    static AnnotationNode getAnnotationNode(
+        List<AnnotationNode> annotations, String annotationClassName) {
         if (annotations == null) {
             return null
         }
         for (AnnotationNode annotation : annotations) {
             ClassNode classNode = annotation.getClassNode()
-            if (classNode.name == annotationClass.getCanonicalName()) {
-                Expression valueNode = annotation.getMember("value")
-                assert valueNode != null
-                assert valueNode instanceof ConstantExpression
-                return (valueNode as ConstantExpression).getValue().toString()
+            if (classNode.name == annotationClassName) {
+                return annotation
             }
         }
         return null
+    }
+    
+    // TODO captureStyle, lang, TestDocs, etc
+    private static String getAnnotationValue(
+        List<AnnotationNode> annotations, Class<?> annotationClass) {
+        AnnotationNode annotation = 
+        GroovyASTUtils.getAnnotationNode(annotations, annotationClass.getCanonicalName())
+        if (annotation == null) {
+            return null
+        }
+        Expression valueNode = annotation.getMember("value")
+        assert valueNode != null
+        assert valueNode instanceof ConstantExpression
+        return (valueNode as ConstantExpression).getValue().toString()
     }
 
     // returns [testDoc, isPage (boolean value)]
@@ -136,7 +130,7 @@ class SrcTreeGeneratorUtils {
             return testDoc
         }
         AdditionalMethodTestDoc additional =
-        additionalTestDocs.getClassTestDoc(getClassQualifiedName(classNode))
+        additionalTestDocs.getClassTestDoc(GroovyASTUtils.getClassQualifiedName(classNode))
         if (additional != null) {
             return [additional.getTestDoc(), additional instanceof AdditionalPage]
         }
@@ -152,9 +146,9 @@ class SrcTreeGeneratorUtils {
             return annotationTestDoc
         }
 
-        List<String> argClassQualifiedNames = getArgClassQualifiedNames(method)
+        List<String> argClassQualifiedNames = GroovyASTUtils.getArgClassQualifiedNames(method)
         AdditionalMethodTestDoc additional = additionalTestDocs.getMethodTestDoc(
-            getClassQualifiedName(method.getDeclaringClass()),
+            GroovyASTUtils.getClassQualifiedName(method.getDeclaringClass()),
             method.getName(), argClassQualifiedNames)
         if (additional != null) {
             return additional.getTestDoc()
@@ -188,25 +182,12 @@ class SrcTreeGeneratorUtils {
         } else {
             testClass = new TestClass()
         }
-        String classQName = getClassQualifiedName(classNode)
+        String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
         testClass.setKey(classQName)
         testClass.setQualifiedName(classQName)
         // TODO captureStyle, TestDocs, etc
         testClass.setTestDoc(testDoc)
         return testClass
-    }
-
-    // check whether classNode is the class for className
-    // or inherits from the class for className
-    static boolean inheritsFromClass(ClassNode classNode, String className) {
-        ClassNode parentNode = classNode
-        while (parentNode != null) {
-            if (parentNode.getName() == className) {
-                return true
-            }
-            parentNode = parentNode.getSuperClass()
-        }
-        return false
     }
 
 }

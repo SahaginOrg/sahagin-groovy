@@ -11,6 +11,7 @@ import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
+import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.share.srctree.PageClass
@@ -92,7 +93,7 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
         // TODO enum etc
         ClassNode classNode = node.getDeclaringClass()
-        String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
+        String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
         TestClass rootClass = rootClassTable.getByKey(classQName)
         if (rootClass == null) {
             rootClass = utils.generateTestClass(classNode)

@@ -21,6 +21,7 @@ import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodTy
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorUtils
+import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
@@ -35,7 +36,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     // Searches static content initialization block from the specific static initializer method node.
     // Returns null if not found
     private BlockStatement getContentClosureBlock(MethodNode node) {
-        if (!SrcTreeGeneratorUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
+        if (!GroovyASTUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
             return null
         }
         // Search static initializer
@@ -217,7 +218,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         }
 
         ClassNode classNode = method.getDeclaringClass()
-        String classQName = SrcTreeGeneratorUtils.getClassQualifiedName(classNode)
+        String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
         TestClass testClass = visitor.getRootClassTable().getByKey(classQName)
         if (testClass == null) {
             testClass = visitor.getSubClassTable().getByKey(classQName)

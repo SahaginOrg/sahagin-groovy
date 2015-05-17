@@ -40,7 +40,8 @@ class GroovyConfig extends Config {
         if (testDir.isAbsolute()) {
             return testDir
         } else {
-            return new File(getRootDir(), testDir.getPath())
+            // avoid ambiguous argument method call for null
+            return new File(getRootDir() as File, testDir.getPath())
         }
     }
 
