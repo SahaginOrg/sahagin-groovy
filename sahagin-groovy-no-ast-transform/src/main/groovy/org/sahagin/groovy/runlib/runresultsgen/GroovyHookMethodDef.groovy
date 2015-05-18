@@ -14,7 +14,6 @@ import org.sahagin.groovy.runlib.external.adapter.spock.SpockAdapter
 import org.sahagin.groovy.runlib.srctreegen.GroovySrcTreeGenerator
 import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.report.HtmlReport;
-import org.sahagin.runlib.external.CaptureStyle;
 import org.sahagin.runlib.external.adapter.Adapter;
 import org.sahagin.runlib.external.adapter.AdapterContainer;
 import org.sahagin.runlib.runresultsgen.HookMethodDef;

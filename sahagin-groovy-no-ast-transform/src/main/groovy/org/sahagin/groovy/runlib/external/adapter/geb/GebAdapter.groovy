@@ -8,7 +8,6 @@ import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.remote.SessionNotFoundException
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
-import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.external.adapter.Adapter
 import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.runlib.external.adapter.ResourceAdditionalTestDocsAdapter
