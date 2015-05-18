@@ -369,7 +369,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         } else {
             fieldType = fieldVarType
         }
-        return [field, fieldType] // TODO maybe getType always returns Object type
+        return [field, fieldType]
     }
 
     // returns [Code, ClassNode]
@@ -449,7 +449,6 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             PropertyExpression property = expression as PropertyExpression
             return generateFieldCode(property, parentMethod)
         } else if (expression instanceof MethodCallExpression) {
-            // TODO TestStepLabel handling
             MethodCallExpression methodCall = expression as MethodCallExpression
             return generateMethodInvokeCode(methodCall, parentMethod)
         } else if (expression instanceof StaticMethodCallExpression) {
