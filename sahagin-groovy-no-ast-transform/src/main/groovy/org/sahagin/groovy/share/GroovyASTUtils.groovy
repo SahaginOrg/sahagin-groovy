@@ -6,6 +6,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.expr.Expression;
 
 class GroovyASTUtils {
     
@@ -40,9 +41,10 @@ class GroovyASTUtils {
         return false
     }
     
-    // returns null if not found
+    // Search AnnotationNode list by class name
+    // - returns null if not found
     static AnnotationNode getAnnotationNode(
-        List<AnnotationNode> annotations, String annotationClassName) {
+            List<AnnotationNode> annotations, String annotationClassName) {
         if (annotations == null) {
             return null
         }
@@ -54,5 +56,18 @@ class GroovyASTUtils {
         }
         return null
     }
-    
+
+    // Search annotation for the specified annotationClass and varName
+    // and returns its value Expression
+    // - returns null if not found
+    static Expression getAnnotationValueExpression(
+            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
+        AnnotationNode annotation =
+                getAnnotationNode(annotations, annotationClass.canonicalName)
+        if (annotation == null) {
+            return null
+        }
+        return annotation.getMember(varName)
+    }
+
 }

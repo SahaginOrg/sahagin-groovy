@@ -26,6 +26,7 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
 import org.sahagin.runlib.additionaltestdoc.AdditionalPage
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
+import org.sahagin.runlib.external.Locale
 import org.sahagin.runlib.srctreegen.ASTUtils
 import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
@@ -88,41 +89,12 @@ class SrcTreeGeneratorUtils {
         return GroovyASTUtils.getClassQualifiedName(propClassNode) + "." + propName
     }
 
-    // Search AnnotationNode list by class name
-    // - returns null if not found
-    static AnnotationNode getAnnotationNode(
-            List<AnnotationNode> annotations, String annotationClassName) {
-        if (annotations == null) {
-            return null
-        }
-        for (AnnotationNode annotation : annotations) {
-            ClassNode classNode = annotation.classNode
-            if (classNode.name == annotationClassName) {
-                return annotation
-            }
-        }
-        return null
-    }
-
-    // Search annotation for the specified annotationClass and varName
-    // and returns its value Expression
-    // - returns null if not found
-    private static Expression getAnnotationValueExpression(
-            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        AnnotationNode annotation =
-                GroovyASTUtils.getAnnotationNode(annotations, annotationClass.canonicalName)
-        if (annotation == null) {
-            return null
-        }
-        return annotation.getMember(varName)
-    }
-
-    // TODO captureStyle, lang, TestDocs, etc
     // get annotation value assuming it is Capture valueS
     // returns null if not found
     private static Object getAnnotationValue(
             List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        Expression valueNode = getAnnotationValueExpression(annotations, annotationClass, varName)
+        Expression valueNode = GroovyASTUtils.getAnnotationValueExpression(
+            annotations, annotationClass, varName)
         if (valueNode == null) {
             return null
         }
@@ -132,15 +104,32 @@ class SrcTreeGeneratorUtils {
 
     // get annotation value assuming it is CaptureStyle value
     // returns default value if not found
-    private static CaptureStyle getCaptureStyleAnnotation(
+    private static CaptureStyle getAnnotationCaptureStyleValue(
             List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        Expression valueNode = getAnnotationValueExpression(annotations, annotationClass, varName)
+        Expression valueNode = GroovyASTUtils.getAnnotationValueExpression(
+            annotations, annotationClass, varName)
         if (valueNode == null) {
             return CaptureStyle.default
         }
         assert valueNode instanceof PropertyExpression
         String enumValue = (valueNode as PropertyExpression).propertyAsString
         CaptureStyle result = CaptureStyle.getEnum(enumValue)
+        assert result != null
+        return result
+    }
+
+    // get annotation value assuming it is Locale value
+    // returns default value if not found
+    private static Locale getAnnotationLocaleValue(
+            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
+        Expression valueNode = GroovyASTUtils.getAnnotationValueExpression(
+                annotations, annotationClass, varName)
+        if (valueNode == null) {
+            return Locale.default
+        }
+        assert valueNode instanceof PropertyExpression
+        String enumValue = (valueNode as PropertyExpression).propertyAsString
+        Locale result = Locale.getEnum(enumValue)
         assert result != null
         return result
     }
