@@ -24,15 +24,15 @@ class GroovySrcTreeGeneratorTest {
         GroovyConfig config = GroovyConfig.generateFromYamlConfig(
             new File("src/test/groovy/org/sahagin/groovy/runlib/srctreegen/sahagin.yml"))
 
-        AcceptableLocales locales = AcceptableLocales.getInstance(config.getUserLocale())
-        GroovyAdapterContainer.globalInitialize(locales, config.getTestFramework())
+        AcceptableLocales locales = AcceptableLocales.getInstance(config.userLocale)
+        GroovyAdapterContainer.globalInitialize(locales, config.testFramework)
         SysMessages.globalInitialize(locales)
         new GroovyJavaLibAdapter().initialSetAdapter()
         new GroovyJUnit4Adapter().initialSetAdapter()
         new SpockAdapter().initialSetAdapter()
         new GebAdapter().initialSetAdapter()
 
-        for (String adapterClassName : config.getAdapterClassNames()) {
+        for (String adapterClassName : config.adapterClassNames) {
             // TODO handle exception thrown by forName or newInstance method
             // more appropriately
             Class<?> adapterClass = Class.forName(adapterClassName)
@@ -46,16 +46,16 @@ class GroovySrcTreeGeneratorTest {
 
         // TODO dummy
         GroovySrcTreeGenerator gen = new GroovySrcTreeGenerator(
-            AdapterContainer.globalInstance().getAdditionalTestDocs(), locales)
+            AdapterContainer.globalInstance().additionalTestDocs, locales)
 
         if (!GroovyAdapterContainer.globalInstance().isRootMethodAdapterSet()) {
             throw new RuntimeException("TODO message here")
         }
 
-        SrcTree srcTree = gen.generateWithRuntimeClassPath(config.getRootBaseTestDir())
-        YamlUtils.dump(srcTree.toYamlObject(), new File(config.getRootBaseReportIntermediateDataDir(), "srcTree"))
+        SrcTree srcTree = gen.generateWithRuntimeClassPath(config.rootBaseTestDir)
+        YamlUtils.dump(srcTree.toYamlObject(), new File(config.rootBaseReportIntermediateDataDir, "srcTree"))
         HtmlReport report = new HtmlReport()
-        report.generate(config.getRootBaseReportIntermediateDataDir(), config.getRootBaseReportOutputDir())
+        report.generate(config.rootBaseReportIntermediateDataDir, config.rootBaseReportOutputDir)
     }
 
 }

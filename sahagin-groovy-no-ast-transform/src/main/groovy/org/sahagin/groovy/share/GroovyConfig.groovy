@@ -21,12 +21,12 @@ class GroovyConfig extends Config {
     public static GroovyConfig generateFromYamlConfig(File yamlConfigFile) throws YamlConvertException {
         Map<String, Object> configYamlObj = YamlUtils.load(yamlConfigFile)
         // use the parent directory of yamlConfigFile as the root directory
-        GroovyConfig config = new GroovyConfig(yamlConfigFile.getParentFile())
+        GroovyConfig config = new GroovyConfig(yamlConfigFile.parentFile)
         try {
             config.fromYamlObject(configYamlObj)
         } catch (YamlConvertException e) {
             throw new YamlConvertException(String.format(
-            INVALID_CONFIG_YAML, yamlConfigFile.getAbsolutePath(), e.getLocalizedMessage()), e)
+            INVALID_CONFIG_YAML, yamlConfigFile.absolutePath, e.localizedMessage), e)
         }
         return config
     }
@@ -41,7 +41,7 @@ class GroovyConfig extends Config {
             return testDir
         } else {
             // avoid ambiguous argument method call for null
-            return new File(getRootDir() as File, testDir.getPath())
+            return new File(getRootDir() as File, testDir.path)
         }
     }
 
@@ -69,7 +69,7 @@ class GroovyConfig extends Config {
     public Map<String, Object> toYamlObject() {
         Map<String, Object> result = super.toYamlObject()
         Map<String, Object> groovyConf = new HashMap<String, Object>(4)
-        groovyConf.put("testDir", testDir.getPath())
+        groovyConf.put("testDir", testDir.path)
         groovyConf.put("adapters", adapterClassNames)
         groovyConf.put("testFramework", testFramework)
         result.put("groovy", groovyConf)

@@ -10,7 +10,7 @@ class TestMainSpec extends GebSpec {
 
     @TestDoc("次の土曜日")
     private static Calendar nextSaturday() {
-        Calendar calendar = Calendar.getInstance()
+        Calendar calendar = Calendar.instance
         int weekday = calendar.get(Calendar.DAY_OF_WEEK)
         if (weekday == Calendar.SATURDAY) {
             calendar.add(Calendar.DATE, 7)
