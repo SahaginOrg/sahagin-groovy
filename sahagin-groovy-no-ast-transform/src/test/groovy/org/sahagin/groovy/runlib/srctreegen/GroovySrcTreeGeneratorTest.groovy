@@ -1,20 +1,18 @@
 package org.sahagin.groovy.runlib.srctreegen
 
+import org.junit.Test
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.geb.GebAdapter
 import org.sahagin.groovy.runlib.external.adapter.javalib.GroovyJavaLibAdapter
 import org.sahagin.groovy.runlib.external.adapter.junit4.GroovyJUnit4Adapter
 import org.sahagin.groovy.runlib.external.adapter.spock.SpockAdapter
-import org.sahagin.groovy.runlib.srctreegen.GroovySrcTreeGenerator
 import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.report.HtmlReport
 import org.sahagin.runlib.external.adapter.Adapter
 import org.sahagin.runlib.external.adapter.AdapterContainer
-import org.sahagin.runlib.external.Locale
 import org.sahagin.share.AcceptableLocales
 import org.sahagin.share.SysMessages
 import org.sahagin.share.srctree.SrcTree
-import org.junit.Test
 import org.sahagin.share.yaml.YamlUtils
 
 class GroovySrcTreeGeneratorTest {

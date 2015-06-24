@@ -29,7 +29,8 @@ import org.codehaus.groovy.control.CompilePhase
 import org.sahagin.groovy.share.GroovyASTUtils;
 import org.sahagin.share.srctree.TestMethod
 
-// must be called after spock AST transformation
+// AST transformation entry point.
+// This must be called after spock AST transformation
 // TODO how to disable sahagin without removing sahagin-groovy from the dependency
 // TODO throw error if javaagent option is also specified
 // TODO later phase than CANONICALIZATION maybe better
