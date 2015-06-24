@@ -46,7 +46,7 @@ class GebAdapter implements Adapter {
             if (browser == null) {
                 return null
             }
-            WebDriver driver = browser.getDriver()
+            WebDriver driver = browser.driver
             if (driver == null) {
                 return null
             }

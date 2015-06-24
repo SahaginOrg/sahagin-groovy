@@ -36,7 +36,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     // Searches static content initialization block from the specific static initializer method node.
     // Returns null if not found
     private BlockStatement getContentClosureBlock(MethodNode node) {
-        if (!GroovyASTUtils.inheritsFromClass(node.getDeclaringClass(), "geb.Page")) {
+        if (!GroovyASTUtils.inheritsFromClass(node.declaringClass, "geb.Page")) {
             return null
         }
         // Search static initializer
@@ -44,32 +44,32 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         if (!node.staticConstructor) {
             return null
         }
-        if (!(node.getCode() instanceof BlockStatement)) {
+        if (!(node.code instanceof BlockStatement)) {
             return null
         }
-        List<Statement> blockStatements = (node.getCode() as BlockStatement).getStatements()
+        List<Statement> blockStatements = (node.code as BlockStatement).statements
         for (Statement blockStatement : blockStatements) {
             if (!(blockStatement instanceof ExpressionStatement)) {
                 continue
             }
-            Expression exp = (blockStatement as ExpressionStatement).getExpression()
+            Expression exp = (blockStatement as ExpressionStatement).expression
             if (!(exp instanceof BinaryExpression)) {
                 continue
             }
-            Expression left = (exp as BinaryExpression).getLeftExpression()
+            Expression left = (exp as BinaryExpression).leftExpression
             if (!(left instanceof FieldExpression)) {
                 continue
             }
-            FieldNode field = (left as FieldExpression).getField()
-            if (!field.isStatic() || field.getName() != "content") {
+            FieldNode field = (left as FieldExpression).field
+            if (!field.isStatic() || field.name != "content") {
                 continue
             }
             // found "content" property initialization part
-            Expression right = (exp as BinaryExpression).getRightExpression()
+            Expression right = (exp as BinaryExpression).rightExpression
             if (!(right instanceof ClosureExpression)) {
                 continue
             }
-            Statement closureCode = (right as ClosureExpression).getCode()
+            Statement closureCode = (right as ClosureExpression).code
             if (!(closureCode instanceof BlockStatement)) {
                 continue
             }
@@ -81,11 +81,11 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     // return [testDoc string, content value Expression].
     // return [null, null] if not found
     def getTestDocAndValueFromContent(MethodCallExpression methodCall) {
-        if (!(methodCall.getArguments() instanceof ArgumentListExpression)) {
+        if (!(methodCall.arguments instanceof ArgumentListExpression)) {
             return [null, null]
         }
         List<Expression> arguments =
-                (methodCall.getArguments() as ArgumentListExpression).getExpressions()
+                (methodCall.arguments as ArgumentListExpression).expressions
         // first argument is option map, second argument is content definition closure
         if (arguments.size() < 2) {
             return [null, null]
@@ -93,40 +93,40 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         if (!(arguments.get(0) instanceof MapExpression)) {
             return [null, null]
         }
-        List<MapEntryExpression> mapEntries = (arguments.get(0) as MapExpression).getMapEntryExpressions()
+        List<MapEntryExpression> mapEntries = (arguments.get(0) as MapExpression).mapEntryExpressions
         if (!(arguments.get(1) instanceof ClosureExpression)) {
             return [null, null]
         }
-        Statement closureCode = (arguments.get(1) as ClosureExpression).getCode()
+        Statement closureCode = (arguments.get(1) as ClosureExpression).code
         if (!(closureCode instanceof BlockStatement)) {
             return [null, null]
         }
-        List<Statement> closureStatements = (closureCode as BlockStatement).getStatements()
+        List<Statement> closureStatements = (closureCode as BlockStatement).statements
         if (closureStatements.size() != 1) {
             return [null, null]
         }
         Expression valueExpression
         if (closureStatements.get(0) instanceof ExpressionStatement) {
-            valueExpression = (closureStatements.get(0) as ExpressionStatement).getExpression()
+            valueExpression = (closureStatements.get(0) as ExpressionStatement).expression
         } else if (closureStatements.get(0) instanceof ReturnStatement) {
-            valueExpression = (closureStatements.get(0) as ReturnStatement).getExpression()
+            valueExpression = (closureStatements.get(0) as ReturnStatement).expression
         } else {
             return [null, null]
         }
         for (MapEntryExpression mapEntry : mapEntries) {
-            if (!(mapEntry.getKeyExpression() instanceof ConstantExpression)) {
+            if (!(mapEntry.keyExpression instanceof ConstantExpression)) {
                 continue
             }
-            String mapKey = (mapEntry.getKeyExpression() as ConstantExpression).getValue().toString()
+            String mapKey = (mapEntry.keyExpression as ConstantExpression).value.toString()
             if (mapKey != "testDoc") {
                 continue
             }
-            if (!(mapEntry.getValueExpression() instanceof ConstantExpression)) {
+            if (!(mapEntry.valueExpression instanceof ConstantExpression)) {
                 // TODO throw more user friendly error
                 throw new RuntimeException(
-                "testDoc value must be constant: " + mapEntry.getValueExpression())
+                "testDoc value must be constant: " + mapEntry.valueExpression)
             }
-            String testDoc = (mapEntry.getValueExpression() as ConstantExpression).getValue().toString()
+            String testDoc = (mapEntry.valueExpression as ConstantExpression).value.toString()
             return [testDoc, valueExpression]
         }
         return [null, null]
@@ -140,14 +140,14 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return false
         }
 
-        List<Statement> list = contentClosureBlock.getStatements()
+        List<Statement> list = contentClosureBlock.statements
         // iterate page object content definition
         for (Statement statement : list) {
             Expression expression
             if (statement instanceof ExpressionStatement) {
-                expression = (statement as ExpressionStatement).getExpression()
+                expression = (statement as ExpressionStatement).expression
             } else if (statement instanceof ReturnStatement) {
-                expression = (statement as ReturnStatement).getExpression()
+                expression = (statement as ReturnStatement).expression
             } else {
                 continue
             }
@@ -161,8 +161,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             if (testDoc == null) {
                 continue
             }
-            TestField testField = visitor.getFieldTable().getByKey(SrcTreeGeneratorUtils.generateFieldKey(
-                    node.getDeclaringClass(), methodCall.getMethodAsString()))
+            TestField testField = visitor.fieldTable.getByKey(
+                SrcTreeGeneratorUtils.generateFieldKey(node.declaringClass, methodCall.methodAsString))
             assert testField != null
 
             Code fieldValueCode
@@ -190,9 +190,9 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         for (Statement statement : list) {
             Expression expression
             if (statement instanceof ExpressionStatement) {
-                expression = (statement as ExpressionStatement).getExpression()
+                expression = (statement as ExpressionStatement).expression
             } else if (statement instanceof ReturnStatement) {
-                expression = (statement as ReturnStatement).getExpression()
+                expression = (statement as ReturnStatement).expression
             } else {
                 continue
             }
@@ -208,7 +208,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             }
             TestField testField = new TestField()
             // each method name will become page object property
-            testField.setSimpleName(methodCall.getMethodAsString())
+            testField.setSimpleName(methodCall.methodAsString)
             testField.setTestDoc(testDoc)
             testFields.add(testField)
         }
@@ -217,24 +217,24 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return true
         }
 
-        ClassNode classNode = method.getDeclaringClass()
+        ClassNode classNode = method.declaringClass
         String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
-        TestClass testClass = visitor.getRootClassTable().getByKey(classQName)
+        TestClass testClass = visitor.rootClassTable.getByKey(classQName)
         if (testClass == null) {
-            testClass = visitor.getSubClassTable().getByKey(classQName)
+            testClass = visitor.subClassTable.getByKey(classQName)
             if (testClass == null) {
-                testClass = visitor.getUtils().generateTestClass(classNode)
-                visitor.getSubClassTable().addTestClass(testClass)
+                testClass = visitor.utils.generateTestClass(classNode)
+                visitor.subClassTable.addTestClass(testClass)
             }
         }
 
         for (TestField testField : testFields) {
-            testField.setTestClassKey(testClass.getKey())
+            testField.setTestClassKey(testClass.key)
             testField.setTestClass(testClass)
             testField.setKey(
-                    SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.getSimpleName()))
-            visitor.getFieldTable().addTestField(testField)
-            testClass.addTestFieldKey(testField.getKey())
+                    SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.simpleName))
+            visitor.fieldTable.addTestField(testField)
+            testClass.addTestFieldKey(testField.key)
             testClass.addTestField(testField)
         }
 
