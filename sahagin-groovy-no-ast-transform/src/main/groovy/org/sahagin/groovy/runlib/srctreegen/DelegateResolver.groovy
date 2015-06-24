@@ -30,7 +30,7 @@ class DelegateResolver {
                         throw new RuntimeException(
                             "delegation to non-sub non-root method is not supported yet")
                     }
-                    testClass.setDelegateToTestClass(delegateToTestClass)
+                    testClass.delegateToTestClass = delegateToTestClass
                 }
             }
         }

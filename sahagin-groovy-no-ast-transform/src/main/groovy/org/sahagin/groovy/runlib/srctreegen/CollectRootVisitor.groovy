@@ -101,16 +101,16 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
         }
 
         TestMethod testMethod = new TestMethod()
-        testMethod.setKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
-        testMethod.setSimpleName(node.name)
+        testMethod.key = SrcTreeGeneratorUtils.generateMethodKey(node, false)
+        testMethod.simpleName = node.name
         // TODO captureStyle, TestDocs, etc
-        testMethod.setTestDoc(utils.getMethodTestDoc(node))
+        testMethod.testDoc = utils.getMethodTestDoc(node)
         for (Parameter param : node.parameters) {
             testMethod.addArgVariable(param.name)
             // TODO variable argument
         }
-        testMethod.setTestClassKey(rootClass.key)
-        testMethod.setTestClass(rootClass)
+        testMethod.testClassKey = rootClass.key
+        testMethod.testClass = rootClass
         rootMethodTable.addTestMethod(testMethod)
 
         rootClass.addTestMethodKey(testMethod.key)

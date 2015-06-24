@@ -305,18 +305,18 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
 
         SubMethodInvoke subMethodInvoke = new SubMethodInvoke()
-        subMethodInvoke.setSubMethodKey(invocationMethod.key)
-        subMethodInvoke.setSubMethod(invocationMethod)
+        subMethodInvoke.subMethodKey = invocationMethod.key
+        subMethodInvoke.subMethod = invocationMethod
         // TODO null thisInstance especially for constructor
         assert receiverCode != null
-        subMethodInvoke.setThisInstance(receiverCode)
+        subMethodInvoke.thisInstance = receiverCode
         for (Code argCode : argCodes) {
             subMethodInvoke.addArg(argCode)
         }
-        subMethodInvoke.setChildInvoke(
-            GroovyASTUtils.getClassQualifiedName(invocationMethodNode.declaringClass) !=
-            GroovyASTUtils.getClassQualifiedName(receiverClassNode))
-        subMethodInvoke.setOriginal(original)
+        subMethodInvoke.childInvoke =
+                (GroovyASTUtils.getClassQualifiedName(invocationMethodNode.declaringClass) !=
+                GroovyASTUtils.getClassQualifiedName(receiverClassNode))
+        subMethodInvoke.original = original
         return [subMethodInvoke, invocationMethodNode.returnType]
     }
 
@@ -343,9 +343,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
 
         VarAssign assign = new VarAssign()
-        assign.setOriginal(original)
-        assign.setVariable(leftCode)
-        assign.setValue(rightCode)
+        assign.original = original
+        assign.variable = leftCode
+        assign.value = rightCode
         return [assign, ClassHelper.VOID_TYPE]
     }
 
@@ -358,10 +358,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(original, fieldVarType)
         }
         Field field = new Field()
-        field.setFieldKey(testField.key)
-        field.setField(testField)
-        field.setThisInstance(receiverCode)
-        field.setOriginal(original)
+        field.fieldKey = testField.key
+        field.field = testField
+        field.thisInstance = receiverCode
+        field.original = original
         ClassNode fieldType
         if (testField.value != null && testField.value.rawASTTypeMemo != null) {
             // TODO maybe memo concept can be used in many place
@@ -389,9 +389,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 rootClassTable, subClassTable)
         if (testClass != null) {
             ClassInstance classInstance = new ClassInstance()
-            classInstance.setTestClassKey(testClass.key)
-            classInstance.setTestClass(testClass)
-            classInstance.setOriginal(classExp.text)
+            classInstance.testClassKey = testClass.key
+            classInstance.testClass = testClass
+            classInstance.original = classExp.text
             return [classInstance, ClassHelper.CLASS_Type]
         } else {
             return generateUnknownCode(
@@ -402,7 +402,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns [UnknownCode, ClassNode]
     def generateUnknownCode(String original, ClassNode classNode) {
         UnknownCode unknownCode = new UnknownCode()
-        unknownCode.setOriginal(original)
+        unknownCode.original = original
         return [unknownCode, classNode]
     }
 
@@ -416,8 +416,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     def generateExpressionCode(Expression expression, MethodNode parentMethod) {
         if (expression == null) {
             StringCode strCode = new StringCode()
-            strCode.setValue(null)
-            strCode.setOriginal("null")
+            strCode.value = null
+            strCode.original = "null"
             return [strCode, ClassHelper.OBJECT_TYPE]
         // TODO handle local variable assignment
         } else if (expression instanceof BinaryExpression) {
@@ -439,8 +439,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             Object value = constant.value
             if (value instanceof String) {
                 StringCode strCode = new StringCode()
-                strCode.setValue(value as String)
-                strCode.setOriginal(expression.text)
+                strCode.value = value as String
+                strCode.original = expression.text
                 return [strCode, ClassHelper.STRING_TYPE]
             } else {
                 return generateUnknownCode(expression)
@@ -476,8 +476,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     return generateUnknownCode(expression)
                 }
                 MethodArgument methodArg = new MethodArgument()
-                methodArg.setArgIndex(index)
-                methodArg.setOriginal(expression.text)
+                methodArg.argIndex = index
+                methodArg.original = expression.text
                 return [methodArg, parentMethod.parameters[index].type]
             } else if (variable.accessedVariable instanceof DynamicVariable) {
                 // this may be dynamically defined property (such as Geb page object contents),
@@ -518,13 +518,13 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
         CodeLine codeLine = new CodeLine()
         // TODO line number OK ?
-        codeLine.setStartLine(statement.lineNumber)
-        codeLine.setEndLine(statement.lastLineNumber)
-        codeLine.setCode(code)
+        codeLine.startLine = statement.lineNumber
+        codeLine.endLine = statement.lastLineNumber
+        codeLine.code = code
         // sometimes original value set by expressionCode method does not equal to
         // the one of statementNode
         // TODO temp
-        code.setOriginal(lineText.trim())
+        code.original = lineText.trim()
         return codeLine
     }
 

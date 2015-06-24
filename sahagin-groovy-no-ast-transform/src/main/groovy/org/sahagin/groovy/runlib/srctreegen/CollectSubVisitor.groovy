@@ -121,16 +121,16 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
         }
 
         TestMethod testMethod = new TestMethod()
-        testMethod.setKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
-        testMethod.setSimpleName(node.name)
+        testMethod.key = SrcTreeGeneratorUtils.generateMethodKey(node, false)
+        testMethod.simpleName = node.name
         // TODO captureStyle, TestDocs, etc
-        testMethod.setTestDoc(utils.getMethodTestDoc(node))
+        testMethod.testDoc = utils.getMethodTestDoc(node)
         for (Parameter param : node.parameters) {
             testMethod.addArgVariable(param.name)
             // TODO variable argument
         }
-        testMethod.setTestClassKey(testClass.key)
-        testMethod.setTestClass(testClass)
+        testMethod.testClassKey = testClass.key
+        testMethod.testClass = testClass
         subMethodTable.addTestMethod(testMethod)
 
         testClass.addTestMethodKey(testMethod.key)

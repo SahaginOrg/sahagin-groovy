@@ -58,12 +58,12 @@ class GroovySrcTreeGenerator {
         CompilerConfiguration compilerConf = new CompilerConfiguration()
         // disable geb, spock, sahagin-groovy itself AST transformations since they makes AST parsing difficult
         // TODO geb and spock specific logic
-        compilerConf.setDisabledGlobalASTTransformations(new HashSet([
+        compilerConf.disabledGlobalASTTransformations = new HashSet([
             "org.sahagin.groovy.runlib.runresultsgen.RunResultsGenTransformation",
             "org.spockframework.compiler.SpockTransform",
             "geb.transform.AttributeAccessingMetaClassRegisteringTransformation",
             "geb.transform.implicitassertions.ImplicitAssertionsTransformation"
-        ]))
+        ])
         CompilationUnit compilation = new CompilationUnit(compilerConf, null, groovyLoader)
         compilation.addSources(srcFiles)
         // TODO maybe don't need to execute to CLASS_GENERATION phase,
@@ -159,11 +159,11 @@ class GroovySrcTreeGenerator {
         }
 
         SrcTree result = new SrcTree()
-        result.setRootClassTable(subVisitor.rootClassTable)
-        result.setSubClassTable(subVisitor.subClassTable)
-        result.setRootMethodTable(rootVisitor.rootMethodTable)
-        result.setSubMethodTable(subVisitor.subMethodTable)
-        result.setFieldTable(subVisitor.fieldTable)
+        result.rootClassTable = subVisitor.rootClassTable
+        result.subClassTable = subVisitor.subClassTable
+        result.rootMethodTable = rootVisitor.rootMethodTable
+        result.subMethodTable = subVisitor.subMethodTable
+        result.fieldTable = subVisitor.fieldTable
         return result
     }
 

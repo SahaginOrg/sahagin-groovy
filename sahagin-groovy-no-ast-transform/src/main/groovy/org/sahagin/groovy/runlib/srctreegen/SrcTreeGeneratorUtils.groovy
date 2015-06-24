@@ -213,10 +213,10 @@ class SrcTreeGeneratorUtils {
             testClass = new TestClass()
         }
         String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
-        testClass.setKey(classQName)
-        testClass.setQualifiedName(classQName)
+        testClass.key = classQName
+        testClass.qualifiedName = classQName
         // TODO captureStyle, TestDocs, etc
-        testClass.setTestDoc(testDoc)
+        testClass.testDoc = testDoc
         return testClass
     }
 
