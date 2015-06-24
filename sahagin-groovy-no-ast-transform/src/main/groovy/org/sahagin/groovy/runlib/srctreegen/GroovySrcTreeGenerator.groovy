@@ -48,7 +48,7 @@ class GroovySrcTreeGenerator {
     }
 
     SrcTree generate(String[] srcFiles, String[] classPathEntries) {
-        ClassLoader parentLoader = ClassLoader.getSystemClassLoader()
+        ClassLoader parentLoader = ClassLoader.systemClassLoader
         GroovyClassLoader groovyLoader = new GroovyClassLoader(parentLoader)
         // TODO should add class path for each jar?
         for (String classPath : classPathEntries) {
@@ -78,99 +78,99 @@ class GroovySrcTreeGenerator {
         // collect root visitor
         CollectRootVisitor beforeRootVisitor = new CollectRootVisitor(utils, CollectPhase.BEFORE)
         for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(beforeRootVisitor)
             }
         }
         CollectRootVisitor rootVisitor = new CollectRootVisitor(utils, CollectPhase.WHILE)
         for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(rootVisitor)
             }
         }
         CollectRootVisitor afterRootVisitor = new CollectRootVisitor(utils, CollectPhase.AFTER)
         for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(afterRootVisitor)
             }
         }
 
         // collect sub visitor
         CollectSubVisitor beforeSubVisitor = new CollectSubVisitor(
-            rootVisitor.getRootClassTable(), utils, CollectPhase.BEFORE)
+            rootVisitor.rootClassTable, utils, CollectPhase.BEFORE)
         for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(beforeSubVisitor)
             }
         }
         CollectSubVisitor subVisitor = new CollectSubVisitor(
-            rootVisitor.getRootClassTable(), utils, CollectPhase.WHILE)
+            rootVisitor.rootClassTable, utils, CollectPhase.WHILE)
         for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(subVisitor)
             }
         }
         CollectSubVisitor afterSubVisitor = new CollectSubVisitor(
-            rootVisitor.getRootClassTable(), utils, CollectPhase.AFTER)
+            rootVisitor.rootClassTable, utils, CollectPhase.AFTER)
         for (SourceUnit src : sources) {
-            for (ClassNode classNode : src.getAST().getClasses()) {
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(afterSubVisitor)
             }
         }
 
         // add additional TestDoc to the table
         AdditionalTestDocsSetter setter = new AdditionalTestDocsSetter(
-            subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-            rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable())
+            subVisitor.rootClassTable, subVisitor.subClassTable,
+            rootVisitor.rootMethodTable, subVisitor.subMethodTable)
         setter.set(additionalTestDocs)
 
         // delegation resolver
         DelegateResolver delegateResolver = new DelegateResolver(
-            subVisitor.getRootClassTable(), subVisitor.getSubClassTable())
+            subVisitor.rootClassTable, subVisitor.subClassTable)
         delegateResolver.resolve()
 
         // collect code visitor
         for (SourceUnit src : sources) {
             CollectCodeVisitor beforeCodeVisitor = new CollectCodeVisitor(
-                    src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-                    rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
-                    subVisitor.getFieldTable(), utils, CollectPhase.BEFORE)
-            for (ClassNode classNode : src.getAST().getClasses()) {
+                    src, subVisitor.rootClassTable, subVisitor.subClassTable,
+                    rootVisitor.rootMethodTable, subVisitor.subMethodTable,
+                    subVisitor.fieldTable, utils, CollectPhase.BEFORE)
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(beforeCodeVisitor)
             }
         }
         for (SourceUnit src : sources) {
             CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
-                    src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-                    rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
-                    subVisitor.getFieldTable(), utils, CollectPhase.WHILE)
-            for (ClassNode classNode : src.getAST().getClasses()) {
+                    src, subVisitor.rootClassTable, subVisitor.subClassTable,
+                    rootVisitor.rootMethodTable, subVisitor.subMethodTable,
+                    subVisitor.fieldTable, utils, CollectPhase.WHILE)
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(codeVisitor)
             }
         }
         for (SourceUnit src : sources) {
             CollectCodeVisitor afterCodeVisitor = new CollectCodeVisitor(
-                    src, subVisitor.getRootClassTable(), subVisitor.getSubClassTable(),
-                    rootVisitor.getRootMethodTable(), subVisitor.getSubMethodTable(),
-                    subVisitor.getFieldTable(), utils, CollectPhase.AFTER)
-            for (ClassNode classNode : src.getAST().getClasses()) {
+                    src, subVisitor.rootClassTable, subVisitor.subClassTable,
+                    rootVisitor.rootMethodTable, subVisitor.subMethodTable,
+                    subVisitor.fieldTable, utils, CollectPhase.AFTER)
+            for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(afterCodeVisitor)
             }
         }
 
         SrcTree result = new SrcTree()
-        result.setRootClassTable(subVisitor.getRootClassTable())
-        result.setSubClassTable(subVisitor.getSubClassTable())
-        result.setRootMethodTable(rootVisitor.getRootMethodTable())
-        result.setSubMethodTable(subVisitor.getSubMethodTable())
-        result.setFieldTable(subVisitor.getFieldTable())
+        result.setRootClassTable(subVisitor.rootClassTable)
+        result.setSubClassTable(subVisitor.subClassTable)
+        result.setRootMethodTable(rootVisitor.rootMethodTable)
+        result.setSubMethodTable(subVisitor.subMethodTable)
+        result.setFieldTable(subVisitor.fieldTable)
         return result
     }
 
     SrcTree generateWithRuntimeClassPath(File srcRootDir) {
         // set up srcFilePaths
         if (!srcRootDir.exists()) {
-            throw new IllegalArgumentException("directory does not exist: " + srcRootDir.getAbsolutePath())
+            throw new IllegalArgumentException("directory does not exist: " + srcRootDir.absolutePath)
         }
         // TODO support Java and Groovy mixed project
         String[] extensions = ["groovy"]
@@ -178,7 +178,7 @@ class GroovySrcTreeGenerator {
         List<File> srcFileList = new ArrayList<File>(srcFileCollection)
         String[] srcFilePaths = new String[srcFileList.size()]
         for (int i = 0; i < srcFileList.size(); i++) {
-            srcFilePaths[i] = srcFileList.get(i).getAbsolutePath()
+            srcFilePaths[i] = srcFileList.get(i).absolutePath
         }
 
         // TODO check jar manifest, etc

@@ -119,17 +119,17 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         ClassNode parentNode = classNode
         while (parentNode != null) {
             for (MethodNode method : parentNode.getDeclaredMethods(methodName)) {
-                Parameter[] params = method.getParameters()
+                Parameter[] params = method.parameters
                 boolean isVarLengthArg = false
                 int nonVarLengthMaxIndex = params.length - 1
                 ClassNode varLengthArgType = null
                 if (params.length != 0) {
-                    ClassNode lastArgType = params[params.length - 1].getType()
+                    ClassNode lastArgType = params[params.length - 1].type
                     if (lastArgType.isArray()) {
                         // last array argument is handled as variable length argument
                         isVarLengthArg = true
                         nonVarLengthMaxIndex = params.length - 2
-                        varLengthArgType = lastArgType.getComponentType()
+                        varLengthArgType = lastArgType.componentType
                     }
                 }
 
@@ -144,7 +144,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 boolean matched = true
 
                 for (int i = 0; i <= nonVarLengthMaxIndex; i++) {
-                    if (!argClasses.get(i).isDerivedFrom(params[i].getType())) {
+                    if (!argClasses.get(i).isDerivedFrom(params[i].type)) {
                         matched = false
                         break // quit argument type checking
                     }
@@ -168,7 +168,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     return method
                 }
             }
-            parentNode = parentNode.getSuperClass()
+            parentNode = parentNode.superClass
         }
         return null
     }
@@ -193,7 +193,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         if (testClass.delegateToTestClass == null) {
             return null
         }
-        String delegateToClassQualifiedName = testClass.delegateToTestClass.getQualifiedName()
+        String delegateToClassQualifiedName = testClass.delegateToTestClass.qualifiedName
         Class<?> delegateToClass = null
         try {
             delegateToClass = Class.forName(delegateToClassQualifiedName)
@@ -228,7 +228,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 }
                 delegateToClassNode = getDelegateToClassNode(delegateToClassNode)
             }
-            parentNode = parentNode.getSuperClass()
+            parentNode = parentNode.superClass
         }
         return [null, null]
     }
@@ -259,17 +259,17 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // return [Code, ClassNode]
     def generateMethodInvokeCode(MethodCall methodCall, MethodNode parentMethod) {
-        ASTNode receiver = methodCall.getReceiver()
-        String methodAsString = methodCall.getMethodAsString()
-        Expression arguments = methodCall.getArguments()
-        String original = methodCall.getText()
+        ASTNode receiver = methodCall.receiver
+        String methodAsString = methodCall.methodAsString
+        Expression arguments = methodCall.arguments
+        String original = methodCall.text
         Code receiverCode
         ClassNode receiverClassNode
         if (receiver instanceof ClassNode) {
             // static method call
             receiverClassNode = receiver as ClassNode
             receiverCode = generateUnknownCode(
-                receiverClassNode.getNameWithoutPackage(), receiverClassNode).first()
+                receiverClassNode.nameWithoutPackage, receiverClassNode).first()
         } else if (receiver instanceof Expression) {
             (receiverCode, receiverClassNode) = generateExpressionCode(
                 receiver as Expression, parentMethod)
@@ -286,9 +286,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
         }
         TupleExpression argumentList = arguments as TupleExpression
-        List<Code> argCodes = new ArrayList<Code>(argumentList.getExpressions().size())
-        List<ClassNode> argClasses = new ArrayList<ClassNode>(argumentList.getExpressions().size())
-        for (Expression argExpression : argumentList.getExpressions()) {
+        List<Code> argCodes = new ArrayList<Code>(argumentList.expressions.size())
+        List<ClassNode> argClasses = new ArrayList<ClassNode>(argumentList.expressions.size())
+        for (Expression argExpression : argumentList.expressions) {
             Code argCode
             ClassNode argClass
             (argCode, argClass) = generateExpressionCode(argExpression, parentMethod)
@@ -305,7 +305,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
 
         SubMethodInvoke subMethodInvoke = new SubMethodInvoke()
-        subMethodInvoke.setSubMethodKey(invocationMethod.getKey())
+        subMethodInvoke.setSubMethodKey(invocationMethod.key)
         subMethodInvoke.setSubMethod(invocationMethod)
         // TODO null thisInstance especially for constructor
         assert receiverCode != null
@@ -314,17 +314,17 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             subMethodInvoke.addArg(argCode)
         }
         subMethodInvoke.setChildInvoke(
-            GroovyASTUtils.getClassQualifiedName(invocationMethodNode.getDeclaringClass()) !=
+            GroovyASTUtils.getClassQualifiedName(invocationMethodNode.declaringClass) !=
             GroovyASTUtils.getClassQualifiedName(receiverClassNode))
         subMethodInvoke.setOriginal(original)
-        return [subMethodInvoke, invocationMethodNode.getReturnType()]
+        return [subMethodInvoke, invocationMethodNode.returnType]
     }
 
     // returns [Code, ClassNode]
     def generateVarAssignCode(BinaryExpression binary, MethodNode parentMethod) {
-        Expression left = binary.getLeftExpression()
-        Expression right = binary.getRightExpression()
-        String original = binary.getText()
+        Expression left = binary.leftExpression
+        Expression right = binary.rightExpression
+        String original = binary.text
         Code rightCode
         ClassNode rightClass
         (rightCode, rightClass) = generateExpressionCode(right, parentMethod)
@@ -358,14 +358,14 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(original, fieldVarType)
         }
         Field field = new Field()
-        field.setFieldKey(testField.getKey())
+        field.setFieldKey(testField.key)
         field.setField(testField)
         field.setThisInstance(receiverCode)
         field.setOriginal(original)
         ClassNode fieldType
-        if (testField.getValue() != null && testField.getValue().getRawASTTypeMemo() != null) {
+        if (testField.value != null && testField.value.rawASTTypeMemo != null) {
             // TODO maybe memo concept can be used in many place
-            fieldType = testField.getValue().getRawASTTypeMemo() as ClassNode
+            fieldType = testField.value.rawASTTypeMemo as ClassNode
         } else {
             fieldType = fieldVarType
         }
@@ -374,28 +374,28 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // returns [Code, ClassNode]
     def generateFieldCode(PropertyExpression property, MethodNode parentMethod) {
-        Expression receiver = property.getObjectExpression()
+        Expression receiver = property.objectExpression
         Code receiverCode
         ClassNode receiverClass
         (receiverCode, receiverClass) = generateExpressionCode(receiver, parentMethod)
-        return generateFieldCodeSub(property.getPropertyAsString(),
-            receiverClass, receiverCode, property.getText(), property.getType())
+        return generateFieldCodeSub(property.propertyAsString,
+            receiverClass, receiverCode, property.text, property.type)
     }
 
     // returns [Code, ClassNode]
     def generateClassInstanceCode(ClassExpression classExp) {
         TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
-                GroovyASTUtils.getClassQualifiedName(classExp.getType()),
+                GroovyASTUtils.getClassQualifiedName(classExp.type),
                 rootClassTable, subClassTable)
         if (testClass != null) {
             ClassInstance classInstance = new ClassInstance()
-            classInstance.setTestClassKey(testClass.getKey())
+            classInstance.setTestClassKey(testClass.key)
             classInstance.setTestClass(testClass)
-            classInstance.setOriginal(classExp.getText())
+            classInstance.setOriginal(classExp.text)
             return [classInstance, ClassHelper.CLASS_Type]
         } else {
             return generateUnknownCode(
-                    classExp.getType().getNameWithoutPackage(),  ClassHelper.CLASS_Type)
+                    classExp.type.nameWithoutPackage,  ClassHelper.CLASS_Type)
         }
     }
 
@@ -408,8 +408,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // returns [UnknownCode, ClassNode]
     def generateUnknownCode(Expression expression) {
-        // TODO using getText is temporal logic
-        return generateUnknownCode(expression.getText(), expression.getType())
+        // TODO using text property is temporal logic
+        return generateUnknownCode(expression.text, expression.type)
     }
 
     // returns [Code, ClassNode]
@@ -423,10 +423,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         } else if (expression instanceof BinaryExpression) {
             BinaryExpression binary = expression as BinaryExpression
             if (binary instanceof DeclarationExpression
-                || binary.getOperation().getText() == "=") {
+                || binary.operation.text == "=") {
                 // variable declaration or assignment
-                if (binary.getRightExpression() == null
-                    || binary.getRightExpression() instanceof EmptyExpression) {
+                if (binary.rightExpression == null
+                    || binary.rightExpression instanceof EmptyExpression) {
                     return generateUnknownCode(expression)
                 } else {
                     return generateVarAssignCode(binary, parentMethod)
@@ -436,11 +436,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             }
         } else if (expression instanceof ConstantExpression) {
             ConstantExpression constant = expression as ConstantExpression
-            Object value = constant.getValue()
+            Object value = constant.value
             if (value instanceof String) {
                 StringCode strCode = new StringCode()
                 strCode.setValue(value as String)
-                strCode.setOriginal(expression.getText())
+                strCode.setOriginal(expression.text)
                 return [strCode, ClassHelper.STRING_TYPE]
             } else {
                 return generateUnknownCode(expression)
@@ -459,15 +459,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateMethodInvokeCode(constructorCall, parentMethod)
         } else if (expression instanceof VariableExpression) {
             VariableExpression variable = expression as VariableExpression
-            if (variable.getName() == "this") {
+            if (variable.name == "this") {
                 // this keyword
                 Code code = generateUnknownCode(expression).first()
-                return [code, parentMethod.getDeclaringClass()]
-            } else if (variable.getAccessedVariable() instanceof Parameter) {
-                Parameter param = variable.getAccessedVariable() as Parameter
+                return [code, parentMethod.declaringClass]
+            } else if (variable.accessedVariable instanceof Parameter) {
+                Parameter param = variable.accessedVariable as Parameter
                 int index = -1
-                for (int i = 0; i < parentMethod.getParameters().length; i++) {
-                    if (parentMethod.getParameters()[i].getName() == param.getName()) {
+                for (int i = 0; i < parentMethod.parameters.length; i++) {
+                    if (parentMethod.parameters[i].name == param.name) {
                         index = i
                         break
                     }
@@ -477,14 +477,14 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 }
                 MethodArgument methodArg = new MethodArgument()
                 methodArg.setArgIndex(index)
-                methodArg.setOriginal(expression.getText())
-                return [methodArg, parentMethod.getParameters()[index].getType()]
-            } else if (variable.getAccessedVariable() instanceof DynamicVariable) {
+                methodArg.setOriginal(expression.text)
+                return [methodArg, parentMethod.parameters[index].type]
+            } else if (variable.accessedVariable instanceof DynamicVariable) {
                 // this may be dynamically defined property (such as Geb page object contents),
                 // so try to find testField for this class
-                DynamicVariable dynamicVar = variable.getAccessedVariable() as DynamicVariable
-                return generateFieldCodeSub(dynamicVar.getName(),
-                    parentMethod.getDeclaringClass(), null, expression.getText(), dynamicVar.getType())
+                DynamicVariable dynamicVar = variable.accessedVariable as DynamicVariable
+                return generateFieldCodeSub(dynamicVar.name,
+                    parentMethod.declaringClass, null, expression.text, dynamicVar.type)
             } else {
                 return generateUnknownCode(expression)
             }
@@ -498,7 +498,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // returns null if there is no corresponding codeLine
     CodeLine generateCodeLine(Statement statement, MethodNode method) {
-        String lineText = srcUnit.getSource().getLine(statement.getLineNumber(), null)
+        String lineText = srcUnit.source.getLine(statement.lineNumber, null)
         if (lineText == null) {
             // Maybe this statement is automatically generated by compiler.
             // Just ignore such statements
@@ -507,10 +507,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
         Code code
         if (statement instanceof ExpressionStatement) {
-            Expression expression = (statement as ExpressionStatement).getExpression()
+            Expression expression = (statement as ExpressionStatement).expression
             code = generateExpressionCode(expression, method).first()
         } else if (statement instanceof ReturnStatement) {
-            Expression expression = (statement as ReturnStatement).getExpression()
+            Expression expression = (statement as ReturnStatement).expression
             code = generateExpressionCode(expression, method).first()
         } else {
             code = new UnknownCode()
@@ -518,13 +518,12 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
         CodeLine codeLine = new CodeLine()
         // TODO line number OK ?
-        codeLine.setStartLine(statement.getLineNumber())
-        codeLine.setEndLine(statement.getLastLineNumber())
+        codeLine.setStartLine(statement.lineNumber)
+        codeLine.setEndLine(statement.lastLineNumber)
         codeLine.setCode(code)
         // sometimes original value set by expressionCode method does not equal to
         // the one of statementNode
         // TODO temp
-        //code.setOriginal(statement.getText())
         code.setOriginal(lineText.trim())
         return codeLine
     }
@@ -532,7 +531,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     @Override
     void visitMethod(MethodNode node) {
         List<SrcTreeVisitorAdapter> listeners =
-        GroovyAdapterContainer.globalInstance().getSrcTreeVisitorAdapters()
+        GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         if (phase == CollectPhase.BEFORE) {
             for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.beforeCollectCode(node, this)) {
@@ -577,13 +576,13 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return
         }
 
-        if (node.getCode() == null || !(node.getCode() instanceof BlockStatement)) {
+        if (node.code == null || !(node.code instanceof BlockStatement)) {
             // no body means maybe abstract method or interface method
             super.visitMethod(node)
             return
         }
 
-        for (Statement statement : (node.getCode() as BlockStatement).getStatements()) {
+        for (Statement statement : (node.code as BlockStatement).statements) {
             List<CodeLine> codeLines = null
             for (SrcTreeVisitorAdapter listener : listeners) {
                 codeLines = listener.collectMethodStatementCode(statement, node, methodType, this)

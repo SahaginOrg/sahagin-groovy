@@ -73,8 +73,8 @@ class SrcTreeGeneratorUtils {
     }
 
     static String generateMethodKey(MethodNode method, boolean noArgClassesStr) {
-        String classQualifiedName = GroovyASTUtils.getClassQualifiedName(method.getDeclaringClass())
-        String methodSimpleName = method.getName()
+        String classQualifiedName = GroovyASTUtils.getClassQualifiedName(method.declaringClass)
+        String methodSimpleName = method.name
         List<String> argClassQualifiedNames = GroovyASTUtils.getArgClassQualifiedNames(method)
         if (noArgClassesStr) {
             return TestMethod.generateMethodKey(classQualifiedName, methodSimpleName)
@@ -96,7 +96,7 @@ class SrcTreeGeneratorUtils {
             return null
         }
         for (AnnotationNode annotation : annotations) {
-            ClassNode classNode = annotation.getClassNode()
+            ClassNode classNode = annotation.classNode
             if (classNode.name == annotationClassName) {
                 return annotation
             }
@@ -110,7 +110,7 @@ class SrcTreeGeneratorUtils {
     private static Expression getAnnotationValueExpression(
             List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
         AnnotationNode annotation =
-                GroovyASTUtils.getAnnotationNode(annotations, annotationClass.getCanonicalName())
+                GroovyASTUtils.getAnnotationNode(annotations, annotationClass.canonicalName)
         if (annotation == null) {
             return null
         }
@@ -127,7 +127,7 @@ class SrcTreeGeneratorUtils {
             return null
         }
         assert valueNode instanceof ConstantExpression
-        return (valueNode as ConstantExpression).getValue()
+        return (valueNode as ConstantExpression).value
     }
 
     // get annotation value assuming it is CaptureStyle value
@@ -136,10 +136,10 @@ class SrcTreeGeneratorUtils {
             List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
         Expression valueNode = getAnnotationValueExpression(annotations, annotationClass, varName)
         if (valueNode == null) {
-            return CaptureStyle.getDefault()
+            return CaptureStyle.default
         }
         assert valueNode instanceof PropertyExpression
-        String enumValue = (valueNode as PropertyExpression).getPropertyAsString()
+        String enumValue = (valueNode as PropertyExpression).propertyAsString
         CaptureStyle result = CaptureStyle.getEnum(enumValue)
         assert result != null
         return result
@@ -150,19 +150,19 @@ class SrcTreeGeneratorUtils {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
         // TODO Pages, TestDocs
         String pageTestDoc =
-                getAnnotationValue(classNode.getAnnotations(), Page.class, 'value') as String
+                getAnnotationValue(classNode.annotations, Page.class, 'value') as String
         if (pageTestDoc != null) {
             return [pageTestDoc, true]
         }
         String testDoc =
-                getAnnotationValue(classNode.getAnnotations(), TestDoc.class, 'value') as String
+                getAnnotationValue(classNode.annotations, TestDoc.class, 'value') as String
         if (testDoc != null) {
             return testDoc
         }
         AdditionalMethodTestDoc additional =
                 additionalTestDocs.getClassTestDoc(GroovyASTUtils.getClassQualifiedName(classNode))
         if (additional != null) {
-            return [additional.getTestDoc(), additional instanceof AdditionalPage]
+            return [additional.testDoc, additional instanceof AdditionalPage]
         }
         return [null, false]
     }
@@ -171,24 +171,24 @@ class SrcTreeGeneratorUtils {
     String getMethodTestDoc(MethodNode method) {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
         String annotationTestDoc =
-                getAnnotationValue(method.getAnnotations(), TestDoc.class, 'value') as String
+                getAnnotationValue(method.annotations, TestDoc.class, 'value') as String
         if (annotationTestDoc != null) {
             return annotationTestDoc
         }
 
         List<String> argClassQualifiedNames = GroovyASTUtils.getArgClassQualifiedNames(method)
         AdditionalMethodTestDoc additional = additionalTestDocs.getMethodTestDoc(
-                GroovyASTUtils.getClassQualifiedName(method.getDeclaringClass()),
-                method.getName(), argClassQualifiedNames)
+                GroovyASTUtils.getClassQualifiedName(method.declaringClass),
+                method.name, argClassQualifiedNames)
         if (additional != null) {
-            return additional.getTestDoc()
+            return additional.testDoc
         }
         return null
     }
 
     String getFieldTestDoc(FieldNode field) {
         // TODO consider additional testDoc
-        return getAnnotationValue(field.getAnnotations(), TestDoc.class, 'value') as String
+        return getAnnotationValue(field.annotations, TestDoc.class, 'value') as String
     }
 
     static boolean isRootMethod(MethodNode node) {

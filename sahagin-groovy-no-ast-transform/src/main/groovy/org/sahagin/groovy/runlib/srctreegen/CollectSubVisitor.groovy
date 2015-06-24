@@ -70,7 +70,7 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
     @Override
     void visitMethod(MethodNode node) {
         List<SrcTreeVisitorAdapter> listeners =
-        GroovyAdapterContainer.globalInstance().getSrcTreeVisitorAdapters()
+        GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         if (phase == CollectPhase.BEFORE) {
             for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.beforeCollectSubMethod(node, this)) {
@@ -109,7 +109,7 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
         }
 
         // TODO enum etc
-        ClassNode classNode = node.getDeclaringClass()
+        ClassNode classNode = node.declaringClass
         String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
         TestClass testClass = rootClassTable.getByKey(classQName)
         if (testClass == null) {
@@ -122,18 +122,18 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
 
         TestMethod testMethod = new TestMethod()
         testMethod.setKey(SrcTreeGeneratorUtils.generateMethodKey(node, false))
-        testMethod.setSimpleName(node.getName())
+        testMethod.setSimpleName(node.name)
         // TODO captureStyle, TestDocs, etc
         testMethod.setTestDoc(utils.getMethodTestDoc(node))
-        for (Parameter param : node.getParameters()) {
-            testMethod.addArgVariable(param.getName())
+        for (Parameter param : node.parameters) {
+            testMethod.addArgVariable(param.name)
             // TODO variable argument
         }
-        testMethod.setTestClassKey(testClass.getKey())
+        testMethod.setTestClassKey(testClass.key)
         testMethod.setTestClass(testClass)
         subMethodTable.addTestMethod(testMethod)
 
-        testClass.addTestMethodKey(testMethod.getKey())
+        testClass.addTestMethodKey(testMethod.key)
         testClass.addTestMethod(testMethod)
 
         super.visitMethod(node)
