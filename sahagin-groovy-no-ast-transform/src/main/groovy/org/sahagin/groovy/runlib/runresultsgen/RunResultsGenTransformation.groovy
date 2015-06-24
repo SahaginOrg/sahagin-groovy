@@ -35,7 +35,7 @@ import org.sahagin.share.srctree.TestMethod
 // TODO later phase than CANONICALIZATION maybe better
 @GroovyASTTransformation(phase=CompilePhase.CANONICALIZATION)
 class RunResultsGenTransformation implements ASTTransformation {
-    
+
     private Statement hookStatement(String methodName, List<Expression> args) {
         ClassNode classExpType = new ClassNode(GroovyHookMethodDef.class)
         ClassExpression classExp = new ClassExpression(classExpType)
@@ -48,12 +48,12 @@ class RunResultsGenTransformation implements ASTTransformation {
         MethodCallExpression methodCall = new MethodCallExpression(classExp, methodName, argList)
         return new ExpressionStatement(methodCall)
     }
-    
+
     private ConstantExpression classQualifiedNameExp(MethodNode methodNode) {
         String classQualifiedName = GroovyASTUtils.getClassQualifiedName(methodNode.declaringClass)
         return new ConstantExpression(classQualifiedName)
     }
-    
+
     private ConstantExpression methodSimpleNameExp(MethodNode methodNode) {
         // TODO spock spefic logic
         AnnotationNode featureMetaData = GroovyASTUtils.getAnnotationNode(
@@ -70,29 +70,29 @@ class RunResultsGenTransformation implements ASTTransformation {
         Object originalMethodName = (nameExpression as ConstantExpression).value
         return new ConstantExpression(originalMethodName)
     }
-    
+
     private ConstantExpression actualMethodSimpleNameExp(MethodNode methodNode) {
         return new ConstantExpression(methodNode.name)
     }
-    
+
     private ConstantExpression argClassesStrExp(MethodNode methodNode) {
         String argClassesStr = TestMethod.argClassQualifiedNamesToArgClassesStr(
             GroovyASTUtils.getArgClassQualifiedNames(methodNode))
         return new ConstantExpression(argClassesStr)   
     }
-    
+
     private ConstantExpression lineExp(Statement statement) {
         return new ConstantExpression(statement.lineNumber)
     }
-    
+
     private ConstantExpression actualLineExp(Statement statement) {
         return new ConstantExpression(statement.lastLineNumber)
     }
-    
+
     private VariableExpression throwableVarExp() {
         return new VariableExpression("e", new ClassNode(Throwable.class))
     }
-    
+
     private Statement initializeStatement() {
         return hookStatement("initialize", null)
     }
@@ -133,7 +133,7 @@ class RunResultsGenTransformation implements ASTTransformation {
                             ConstantExpression argExp = argClassesStrExp(methodNode)
                                                     
                             BlockStatement tryStatement = new BlockStatement()
-                            tryStatement.setVariableScope(block.variableScope)
+                            tryStatement.variableScope = block.variableScope
                             tryStatement.addStatement(initializeStatement())
                             tryStatement.addStatement(beforeMethodHookStatement(classExp, methodExp, actualMethodExp))
                             for (Statement line : block.statements) {
@@ -149,7 +149,7 @@ class RunResultsGenTransformation implements ASTTransformation {
                             }
                             
                             BlockStatement catchBlockStatement = new BlockStatement()
-                            catchBlockStatement.setVariableScope(block.variableScope)
+                            catchBlockStatement.variableScope = block.variableScope
                             catchBlockStatement.addStatements(
                                     [initializeStatement(),
                                         methodErrorHookStatement(classExp, methodExp, throwableExp),
@@ -158,7 +158,7 @@ class RunResultsGenTransformation implements ASTTransformation {
                             CatchStatement catchStatement = new CatchStatement(expceptionParam, catchBlockStatement)
 
                             BlockStatement finallyStatement = new BlockStatement()
-                            finallyStatement.setVariableScope(block.variableScope)
+                            finallyStatement.variableScope = block.variableScope
                             finallyStatement.addStatements(
                                     [initializeStatement(), afterMethodHookStatement(classExp, methodExp)])
 
@@ -167,9 +167,9 @@ class RunResultsGenTransformation implements ASTTransformation {
                             tryCatchStatement.addCatch(catchStatement)
                             
                             BlockStatement newBlock = new BlockStatement()
-                            newBlock.setVariableScope(block.variableScope)
+                            newBlock.variableScope = block.variableScope
                             newBlock.addStatement(tryCatchStatement)
-                            methodNode.setCode(newBlock)
+                            methodNode.code = newBlock
                         }
                     }
                 }

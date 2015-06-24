@@ -56,25 +56,25 @@ class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
         if (blockText != null) {
             TestStepLabel testStepLabel = new TestStepLabel()
-            testStepLabel.setLabel(statement.statementLabel)
-            testStepLabel.setText(blockText)
-            testStepLabel.setOriginal(statement.statementLabel + ": " + blockText)
+            testStepLabel.label = statement.statementLabel
+            testStepLabel.text = blockText
+            testStepLabel.original = statement.statementLabel + ": " + blockText
 
             CodeLine testStepLabelLine = new CodeLine()
-            testStepLabelLine.setStartLine(-1)
-            testStepLabelLine.setEndLine(-1)
-            testStepLabelLine.setCode(testStepLabel)
+            testStepLabelLine.startLine = -1
+            testStepLabelLine.endLine = -1
+            testStepLabelLine.code = testStepLabel
             return [testStepLabelLine]
         }
 
         // no text block label and block first statement
         TestStepLabel testStepLabel = new TestStepLabel()
-        testStepLabel.setLabel(statement.statementLabel)
-        testStepLabel.setOriginal(statement.statementLabel + ":")
+        testStepLabel.label = statement.statementLabel
+        testStepLabel.original = statement.statementLabel + ":"
         CodeLine testStepLabelLine = new CodeLine()
-        testStepLabelLine.setStartLine(-1)
-        testStepLabelLine.setEndLine(-1)
-        testStepLabelLine.setCode(testStepLabel)
+        testStepLabelLine.startLine = -1
+        testStepLabelLine.endLine = -1
+        testStepLabelLine.code = testStepLabel
         CodeLine mainLine = visitor.generateCodeLine(statement, method)
         return [testStepLabelLine, mainLine]
     }

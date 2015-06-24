@@ -31,7 +31,7 @@ class GebAdapter implements Adapter {
     // can set null
     static void setAdapter(final Browser browser) {
         AdapterContainer container = AdapterContainer.globalInstance()
-        container.setScreenCaptureAdapter(new ScreenCaptureAdapterImpl(browser))
+        container.screenCaptureAdapter = new ScreenCaptureAdapterImpl(browser)
     }
 
     private static class ScreenCaptureAdapterImpl implements ScreenCaptureAdapter {

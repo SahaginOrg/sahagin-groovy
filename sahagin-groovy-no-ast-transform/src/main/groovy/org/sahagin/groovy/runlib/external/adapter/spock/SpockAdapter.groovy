@@ -16,7 +16,7 @@ class SpockAdapter implements Adapter {
     @Override
     public void initialSetAdapter() {
         GroovyAdapterContainer container = GroovyAdapterContainer.globalInstance()
-        container.setRootMethodAdapter(new GroovyRootMethodAdapterImpl(getName()))
+        container.rootMethodAdapter = new GroovyRootMethodAdapterImpl(getName())
         container.addSrcTreeVisitorAdapter(new SpockSrcTreeVisitorAdapter())
     }
 

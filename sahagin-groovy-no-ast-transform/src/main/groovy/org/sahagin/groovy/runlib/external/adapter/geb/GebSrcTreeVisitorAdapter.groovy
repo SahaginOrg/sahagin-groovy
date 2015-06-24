@@ -170,8 +170,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             (fieldValueCode, fieldValueClass) =
             visitor.generateExpressionCode(fieldValue, node)
             // TODO maybe memo concept can be used in many place
-            fieldValueCode.setRawASTTypeMemo(fieldValueClass)
-            testField.setValue(fieldValueCode)
+            fieldValueCode.rawASTTypeMemo = fieldValueClass
+            testField.value = fieldValueCode
         }
         return true
     }
@@ -208,8 +208,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             }
             TestField testField = new TestField()
             // each method name will become page object property
-            testField.setSimpleName(methodCall.methodAsString)
-            testField.setTestDoc(testDoc)
+            testField.simpleName = methodCall.methodAsString
+            testField.testDoc = testDoc
             testFields.add(testField)
         }
 
@@ -229,10 +229,10 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         }
 
         for (TestField testField : testFields) {
-            testField.setTestClassKey(testClass.key)
-            testField.setTestClass(testClass)
-            testField.setKey(
-                    SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.simpleName))
+            testField.testClassKey = testClass.key
+            testField.testClass = testClass
+            testField.key =
+                    SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.simpleName)
             visitor.fieldTable.addTestField(testField)
             testClass.addTestFieldKey(testField.key)
             testClass.addTestField(testField)
