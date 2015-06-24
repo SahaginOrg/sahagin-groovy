@@ -37,16 +37,16 @@ class SpockAdapter implements Adapter {
         public boolean isRootMethod(MethodNode node) {
             // node must not be transformed by Spock global AST transformation
             if (!GroovyASTUtils.inheritsFromClass(
-                node.getDeclaringClass(), "spock.lang.Specification")) {
+                node.declaringClass, "spock.lang.Specification")) {
                 return false
             }
 
-            if (!(node.getCode() instanceof BlockStatement)) {
+            if (!(node.code instanceof BlockStatement)) {
                 return false
             }
-            List<Statement> statements =(node.getCode() as BlockStatement).getStatements()
+            List<Statement> statements =(node.code as BlockStatement).statements
             for (Statement statement : statements) {
-                if (statement.getStatementLabel() != null) {
+                if (statement.statementLabel != null) {
                     // method including at least one statement label is handled as feature method
                     return true
                 }

@@ -184,7 +184,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return false
         }
 
-        List<Statement> list = contentClosureBlock.getStatements()
+        List<Statement> list = contentClosureBlock.statements
         List<TestField> testFields = new ArrayList<TestField>(list.size())
         // iterate page object content definition
         for (Statement statement : list) {

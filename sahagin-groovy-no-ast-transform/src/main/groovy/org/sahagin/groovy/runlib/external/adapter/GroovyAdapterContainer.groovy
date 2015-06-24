@@ -44,7 +44,7 @@ class GroovyAdapterContainer extends AdapterContainer {
         if (acceptableTestFramework == null) {
             throw new IllegalStateException("acceptableTestFramework is not set")
         }
-        if (acceptableTestFramework.equals(rootMethodAdapter.getName())) {
+        if (acceptableTestFramework.equals(rootMethodAdapter.name)) {
             this.rootMethodAdapter = rootMethodAdapter
         }
     }

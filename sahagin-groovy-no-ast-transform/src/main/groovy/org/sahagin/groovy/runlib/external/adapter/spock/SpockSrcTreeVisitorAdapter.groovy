@@ -32,33 +32,33 @@ class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         if (methodType != MethodType.ROOT) {
             return null
         }
-        if (statement.getStatementLabel() == null) {
+        if (statement.statementLabel == null) {
             return null
         }
 
         String blockText = null
         if (statement instanceof ExpressionStatement) {
-            Expression expression = (statement as ExpressionStatement).getExpression()
+            Expression expression = (statement as ExpressionStatement).expression
             if (expression instanceof ConstantExpression) {
                 // ConstantExpression statement with label corresponds to block label text
-                blockText = (String) (expression as ConstantExpression).getValue()
+                blockText = (String) (expression as ConstantExpression).value
                 assert blockText != null && blockText != ""
             }
         } else if (statement instanceof ReturnStatement) {
             // last line block label can be ReturnStatement
-            Expression expression = (statement as ReturnStatement).getExpression()
+            Expression expression = (statement as ReturnStatement).expression
             if (expression instanceof ConstantExpression) {
                 // ConstantExpression statement with label corresponds to block label text
-                blockText = (String) (expression as ConstantExpression).getValue()
+                blockText = (String) (expression as ConstantExpression).value
                 assert blockText != null && blockText != ""
             }
         }
 
         if (blockText != null) {
             TestStepLabel testStepLabel = new TestStepLabel()
-            testStepLabel.setLabel(statement.getStatementLabel())
+            testStepLabel.setLabel(statement.statementLabel)
             testStepLabel.setText(blockText)
-            testStepLabel.setOriginal(statement.getStatementLabel() + ": " + blockText)
+            testStepLabel.setOriginal(statement.statementLabel + ": " + blockText)
 
             CodeLine testStepLabelLine = new CodeLine()
             testStepLabelLine.setStartLine(-1)
@@ -69,8 +69,8 @@ class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
         // no text block label and block first statement
         TestStepLabel testStepLabel = new TestStepLabel()
-        testStepLabel.setLabel(statement.getStatementLabel())
-        testStepLabel.setOriginal(statement.getStatementLabel() + ":")
+        testStepLabel.setLabel(statement.statementLabel)
+        testStepLabel.setOriginal(statement.statementLabel + ":")
         CodeLine testStepLabelLine = new CodeLine()
         testStepLabelLine.setStartLine(-1)
         testStepLabelLine.setEndLine(-1)

@@ -38,7 +38,7 @@ class GroovyJUnit4Adapter implements Adapter {
                 return false
             }
             for (AnnotationNode annotation : annotations) {
-                ClassNode classNode = annotation.getClassNode()
+                ClassNode classNode = annotation.classNode
                 if (classNode.name == "org.junit.Test") {
                     return true
                 }

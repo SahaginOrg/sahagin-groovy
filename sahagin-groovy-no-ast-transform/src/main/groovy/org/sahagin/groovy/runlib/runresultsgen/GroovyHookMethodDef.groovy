@@ -37,7 +37,7 @@ import org.sahagin.share.yaml.YamlUtils;
 
 class GroovyHookMethodDef {
     private static final String MSG_TEST_FRAMEWORK_NOT_FOUND = "testFramework not found: %s";
-    private static Logger logger = Logging.getLogger(GroovyHookMethodDef.class.getName());
+    private static Logger logger = Logging.getLogger(GroovyHookMethodDef.class.name);
     private static HookMethodManager manager = null;
     
     static void initialize() {
@@ -55,8 +55,8 @@ class GroovyHookMethodDef {
         GroovyConfig config = GroovyConfig.generateFromYamlConfig(new File(configFilePath));
         Logging.setLoggerEnabled(config.isOutputLog());   
         logger.info("initialize");
-        AcceptableLocales locales = AcceptableLocales.getInstance(config.getUserLocale());
-        GroovyAdapterContainer.globalInitialize(locales, config.getTestFramework());
+        AcceptableLocales locales = AcceptableLocales.getInstance(config.userLocale);
+        GroovyAdapterContainer.globalInitialize(locales, config.testFramework);
         SysMessages.globalInitialize(locales);
 
         // default adapters
@@ -65,7 +65,7 @@ class GroovyHookMethodDef {
         new GroovyJavaLibAdapter().initialSetAdapter();
         new GebAdapter().initialSetAdapter();        
 
-        for (String adapterClassName : config.getAdapterClassNames()) {
+        for (String adapterClassName : config.adapterClassNames) {
             // TODO handle exception thrown by forName or newInstance method
             // more appropriately
             Class<?> adapterClass = Class.forName(adapterClassName);
@@ -79,12 +79,12 @@ class GroovyHookMethodDef {
 
         if (!GroovyAdapterContainer.globalInstance().isRootMethodAdapterSet()) {
             throw new RuntimeException(String.format(
-                    MSG_TEST_FRAMEWORK_NOT_FOUND, config.getTestFramework()));
+                    MSG_TEST_FRAMEWORK_NOT_FOUND, config.testFramework));
         }
 
         // delete previous data
-        if (config.getRootBaseReportIntermediateDataDir().exists()) {
-            FileUtils.deleteDirectory(config.getRootBaseReportIntermediateDataDir());
+        if (config.rootBaseReportIntermediateDataDir.exists()) {
+            FileUtils.deleteDirectory(config.rootBaseReportIntermediateDataDir);
         }
         
         SrcTree srcTree = generateAndDumpSrcTree(config, locales);
@@ -97,8 +97,8 @@ class GroovyHookMethodDef {
                 public void run() {
                     HtmlReport report = new HtmlReport();
                     try {
-                        report.generate(config.getRootBaseReportIntermediateDataDir(),
-                                config.getRootBaseReportOutputDir());
+                        report.generate(config.rootBaseReportIntermediateDataDir,
+                                config.rootBaseReportOutputDir);
                     } catch (IllegalDataStructureException e) {
                         throw new RuntimeException(e);
                     } catch (IllegalTestScriptException e) {
@@ -112,9 +112,9 @@ class GroovyHookMethodDef {
     private static SrcTree generateAndDumpSrcTree(GroovyConfig config, AcceptableLocales locales) {
         // generate and dump srcTree
         GroovySrcTreeGenerator generator = new GroovySrcTreeGenerator(
-                AdapterContainer.globalInstance().getAdditionalTestDocs(), locales);
-        File srcTreeFile = CommonPath.srcTreeFile(config.getRootBaseReportIntermediateDataDir());
-        SrcTree srcTree = generator.generateWithRuntimeClassPath(config.getRootBaseTestDir());
+                AdapterContainer.globalInstance().additionalTestDocs, locales);
+        File srcTreeFile = CommonPath.srcTreeFile(config.rootBaseReportIntermediateDataDir);
+        SrcTree srcTree = generator.generateWithRuntimeClassPath(config.rootBaseTestDir);
         SrcTreeChecker.check(srcTree);
         YamlUtils.dump(srcTree.toYamlObject(), srcTreeFile);
         return srcTree;
