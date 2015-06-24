@@ -1,25 +1,12 @@
 package org.sahagin.groovy.runlib.srctreegen
 
-import java.util.List
-
-import org.apache.bcel.generic.RETURN
-import org.apache.commons.lang3.tuple.Pair
-import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.ast.stmt.Statement
-import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
@@ -27,21 +14,24 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalPage
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.external.Locale
-import org.sahagin.runlib.srctreegen.ASTUtils
+import org.sahagin.runlib.external.Page
+import org.sahagin.runlib.external.Pages
+import org.sahagin.runlib.external.TestDoc
+import org.sahagin.runlib.external.TestDocs
+import org.sahagin.share.AcceptableLocales
 import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
-import org.sahagin.runlib.external.TestDoc
-import org.sahagin.runlib.external.Page
-import org.sahagin.runlib.external.adapter.JavaAdapterContainer
 
 class SrcTreeGeneratorUtils {
     private AdditionalTestDocs additionalTestDocs
+    private AcceptableLocales locales
 
-    SrcTreeGeneratorUtils(AdditionalTestDocs additionalTestDocs) {
+    SrcTreeGeneratorUtils(AdditionalTestDocs additionalTestDocs, AcceptableLocales locales) {
         this.additionalTestDocs = additionalTestDocs
+        this.locales = locales
     }
 
     static TestClass getTestClass(String classQualifiedName,
@@ -89,62 +79,189 @@ class SrcTreeGeneratorUtils {
         return GroovyASTUtils.getClassQualifiedName(propClassNode) + "." + propName
     }
 
-    // get annotation value assuming it is Capture valueS
+    // get annotation value assuming it is Object value.
     // returns null if not found
-    private static Object getAnnotationValue(
-            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        Expression valueNode = GroovyASTUtils.getAnnotationValueExpression(
-            annotations, annotationClass, varName)
-        if (valueNode == null) {
+    private static Object getAnnotationValue(AnnotationNode annotation, String varName) {
+        if (annotation == null) {
+            throw new NullPointerException()
+        }
+        if (varName == null) {
+            throw new NullPointerException()
+        }
+        Expression valueExp = annotation.getMember(varName)
+        if (valueExp == null) {
             return null
         }
-        assert valueNode instanceof ConstantExpression
-        return (valueNode as ConstantExpression).value
+        assert valueExp instanceof ConstantExpression
+        return (valueExp as ConstantExpression).value
     }
 
-    // get annotation value assuming it is CaptureStyle value
+    // get annotation value assuming it is CaptureStyle value.
     // returns default value if not found
     private static CaptureStyle getAnnotationCaptureStyleValue(
-            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        Expression valueNode = GroovyASTUtils.getAnnotationValueExpression(
-            annotations, annotationClass, varName)
-        if (valueNode == null) {
+        AnnotationNode annotation, String varName) {
+        if (annotation == null) {
+            throw new NullPointerException()
+        }
+        if (varName == null) {
+            throw new NullPointerException()
+        }
+        Expression valueExp = annotation.getMember(varName)
+        if (valueExp == null) {
             return CaptureStyle.default
         }
-        assert valueNode instanceof PropertyExpression
-        String enumValue = (valueNode as PropertyExpression).propertyAsString
-        CaptureStyle result = CaptureStyle.getEnum(enumValue)
-        assert result != null
+        assert valueExp instanceof PropertyExpression
+        String enumValue = (valueExp as PropertyExpression).propertyAsString
+        CaptureStyle result = CaptureStyle.valueOf(enumValue)
+        if (result == null) {
+            return CaptureStyle.default
+        }
         return result
     }
 
-    // get annotation value assuming it is Locale value
+    // get annotation value assuming it is Locale value.
     // returns default value if not found
     private static Locale getAnnotationLocaleValue(
-            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        Expression valueNode = GroovyASTUtils.getAnnotationValueExpression(
-                annotations, annotationClass, varName)
-        if (valueNode == null) {
+        AnnotationNode annotation, String varName) {
+        if (annotation == null) {
+            throw new NullPointerException()
+        }
+        if (varName == null) {
+            throw new NullPointerException()
+        }
+        Expression valueExp = annotation.getMember(varName)
+        if (valueExp == null) {
             return Locale.default
         }
-        assert valueNode instanceof PropertyExpression
-        String enumValue = (valueNode as PropertyExpression).propertyAsString
-        Locale result = Locale.getEnum(enumValue)
-        assert result != null
+        assert valueExp instanceof PropertyExpression
+        String enumValue = (valueExp as PropertyExpression).propertyAsString
+        CaptureStyle result = Locale.valueOf(enumValue)
+        if (result == null) {
+            return Locale.default
+        }
         return result
     }
 
-    // returns [testDoc, isPage (boolean value)]
+    // return [Map<Locale, String>, CaptureStyle]
+    // return empty list and null pair if no TestDoc is found
+    private static def getAllTestDocs(List<AnnotationNode> annotations) {
+        AnnotationNode testDocAnnotation = GroovyASTUtils.getAnnotationNode(annotations, TestDoc.class)
+        AnnotationNode testDocsAnnotation = GroovyASTUtils.getAnnotationNode(annotations, TestDocs.class)
+        if (testDocAnnotation != null && testDocsAnnotation != null) {
+            // TODO throw IllegalTestScriptException
+            throw new RuntimeException('do not use @TestDoc and @TestDocs at the same place')
+        }
+
+        // all @testDoc annotations including annotations contained in @TestDocs
+        List<AnnotationNode> allTestDocAnnotations = new ArrayList<AnnotationNode>(2)
+        CaptureStyle resultCaptureStyle = null
+
+        if (testDocAnnotation != null) {
+            // get @TestDoc
+            allTestDocAnnotations.add(testDocAnnotation)
+            resultCaptureStyle = getAnnotationCaptureStyleValue(testDocAnnotation, 'capture')
+        } else if (testDocsAnnotation != null) {
+            throw new RuntimeException('TODO implement')
+        }
+
+        // get resultTestDocMap
+        Map<Locale, String> resultTestDocMap = 
+        new HashMap<Locale, String>(allTestDocAnnotations.size())
+        for (AnnotationNode eachTestDocAnnotation : allTestDocAnnotations) {
+            Object value = getAnnotationValue(eachTestDocAnnotation, 'value')
+            Locale locale = getAnnotationLocaleValue(eachTestDocAnnotation, 'locale')
+            resultTestDocMap.put(locale, (String) value)
+        }
+
+        return [resultTestDocMap, resultCaptureStyle]
+    }
+
+    // return empty list if no Page is found
+    private static Map<Locale, String> getAllPageTestDocs(
+            List<AnnotationNode> annotations) {
+        AnnotationNode pageAnnotation = GroovyASTUtils.getAnnotationNode(annotations, Page.class)
+        AnnotationNode pagesAnnotation = GroovyASTUtils.getAnnotationNode(annotations, Pages.class)
+        if (pageAnnotation != null && pagesAnnotation != null) {
+            // TODO throw IllegalTestScriptException
+            throw new RuntimeException('don not use @Page and @Pages at the same place')
+        }
+
+        // all @Page annotations including annotations contained in @Pages
+        List<AnnotationNode> allPageAnnotations = new ArrayList<AnnotationNode>(2)
+
+        if (pageAnnotation != null) {
+            // get @Page
+            allPageAnnotations.add(pageAnnotation)
+        } else if (pagesAnnotation != null) {
+            throw new RuntimeException('TODO implement')
+        }
+
+        // get resultPageMap
+        Map<Locale, String> resultPageMap = 
+        new HashMap<Locale, String>(allPageAnnotations.size())
+        for (AnnotationNode eachPageAnnotation : allPageAnnotations) {
+            Object value = getAnnotationValue(eachPageAnnotation, 'value')
+            Locale locale = getAnnotationLocaleValue(eachPageAnnotation, 'locale')
+            resultPageMap.put(locale, (String) value)
+        }
+
+        return resultPageMap
+    }
+
+    // returns [value(String), CaptureStyle]
+    // return null pair if no TestDoc is found
+    private static def getTestDoc(List<AnnotationNode> annotations, AcceptableLocales locales) {
+        Map<Locale, String> testDocMap
+        CaptureStyle captureStyle
+        (testDocMap, captureStyle) = getAllTestDocs(annotations)
+        if (testDocMap.isEmpty()) {
+            return [null, captureStyle] // no @TestDoc found
+        }
+
+        String testDoc = null
+        for (Locale locale : locales.locales) {
+            String value = testDocMap.get(locale)
+            if (value != null) {
+                testDoc = value
+                break
+            }
+        }
+        if (testDoc == null) {
+            // set empty string if no locale matched data is found
+            return ['', captureStyle]
+        } else {
+            return [testDoc, captureStyle]
+        }
+    }
+    
+    // return null if no Page found
+    private static String getPageTestDoc(
+        List<AnnotationNode> annotations, AcceptableLocales locales) {
+        Map<Locale, String> allPages = getAllPageTestDocs(annotations)
+        if (allPages.isEmpty()) {
+            return null // no @Page found
+        }
+
+        for (Locale locale : locales.locales) {
+            String value = allPages.get(locale)
+            if (value != null) {
+                return value
+            }
+        }
+        // set empty string if no locale matched data is found
+        return ''
+    }
+
+    // returns [testDoc(String), isPage (boolean)]
     def getClassTestDoc(ClassNode classNode) {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
-        // TODO Pages, TestDocs
-        String pageTestDoc =
-                getAnnotationValue(classNode.annotations, Page.class, 'value') as String
+        String pageTestDoc = getPageTestDoc(classNode.annotations, locales)
         if (pageTestDoc != null) {
             return [pageTestDoc, true]
         }
-        String testDoc =
-                getAnnotationValue(classNode.annotations, TestDoc.class, 'value') as String
+        CaptureStyle captureStyle
+        String testDoc
+        (testDoc, captureStyle) = getTestDoc(classNode.annotations, locales)
         if (testDoc != null) {
             return testDoc
         }
@@ -156,13 +273,14 @@ class SrcTreeGeneratorUtils {
         return [null, false]
     }
 
-    // TODO captureStyle, lang, TestDocs, etc
-    String getMethodTestDoc(MethodNode method) {
+    // returns [testDoc(String), CaptureStyle]
+    def getMethodTestDoc(MethodNode method) {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
-        String annotationTestDoc =
-                getAnnotationValue(method.annotations, TestDoc.class, 'value') as String
-        if (annotationTestDoc != null) {
-            return annotationTestDoc
+        CaptureStyle captureStyle
+        String testDoc
+        (testDoc, captureStyle) = getTestDoc(method.annotations, locales)
+        if (testDoc != null) {
+            return [testDoc, captureStyle]
         }
 
         List<String> argClassQualifiedNames = GroovyASTUtils.getArgClassQualifiedNames(method)
@@ -170,14 +288,17 @@ class SrcTreeGeneratorUtils {
                 GroovyASTUtils.getClassQualifiedName(method.declaringClass),
                 method.name, argClassQualifiedNames)
         if (additional != null) {
-            return additional.testDoc
+            return [additional.testDoc, additional.captureStyle]
         }
-        return null
+        return [null, CaptureStyle.default]
     }
 
     String getFieldTestDoc(FieldNode field) {
         // TODO consider additional testDoc
-        return getAnnotationValue(field.annotations, TestDoc.class, 'value') as String
+        CaptureStyle captureStyle
+        String testDoc
+        (testDoc, captureStyle) = getTestDoc(field.annotations, locales)
+        return testDoc
     }
 
     static boolean isRootMethod(MethodNode node) {
@@ -188,7 +309,10 @@ class SrcTreeGeneratorUtils {
         if (isRootMethod(node)) {
             return false
         }
-        return getMethodTestDoc(node) != null
+        CaptureStyle captureStyle
+        String testDoc
+        (testDoc, captureStyle) = getMethodTestDoc(node)
+        return testDoc != null
     }
 
     TestClass generateTestClass(ClassNode classNode) {
@@ -204,7 +328,6 @@ class SrcTreeGeneratorUtils {
         String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
         testClass.key = classQName
         testClass.qualifiedName = classQName
-        // TODO captureStyle, TestDocs, etc
         testClass.testDoc = testDoc
         return testClass
     }

@@ -1,36 +1,18 @@
 package org.sahagin.groovy.runlib.srctreegen
 
-import java.util.Map
-import java.util.concurrent.Phaser;
 import java.util.regex.Pattern
 
 import org.apache.commons.io.FileUtils
-import org.codehaus.groovy.antlr.AntlrASTProcessSnippets
-import org.codehaus.groovy.antlr.AntlrParserPlugin
-import org.codehaus.groovy.antlr.SourceBuffer
-import org.codehaus.groovy.antlr.UnicodeEscapingReader
-import org.codehaus.groovy.antlr.parser.GroovyLexer
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.CompileUnit
-import org.codehaus.groovy.ast.FieldNode
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.ModuleNode
-import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.ErrorCollector
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
 import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.srctreegen.AdditionalTestDocsSetter
-import org.sahagin.runlib.srctreegen.SrcTreeGenerator.CollectRootRequestor
-import org.sahagin.runlib.srctreegen.SrcTreeGenerator.CollectSubRequestor
 import org.sahagin.share.AcceptableLocales
 import org.sahagin.share.srctree.SrcTree
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.control.Phases
 
 class GroovySrcTreeGenerator {
     private AdditionalTestDocs additionalTestDocs
@@ -73,7 +55,7 @@ class GroovySrcTreeGenerator {
         // logic)
         compilation.compile(Phases.CLASS_GENERATION)
         Collection<SourceUnit> sources = compilation.sources.values()
-        SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs)
+        SrcTreeGeneratorUtils utils = new SrcTreeGeneratorUtils(additionalTestDocs, locales)
 
         // collect root visitor
         CollectRootVisitor beforeRootVisitor = new CollectRootVisitor(utils, CollectPhase.BEFORE)

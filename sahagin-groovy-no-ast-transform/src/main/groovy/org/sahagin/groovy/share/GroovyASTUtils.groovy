@@ -40,7 +40,7 @@ class GroovyASTUtils {
         }
         return false
     }
-    
+
     // Search AnnotationNode list by class name
     // - returns null if not found
     static AnnotationNode getAnnotationNode(
@@ -57,17 +57,11 @@ class GroovyASTUtils {
         return null
     }
 
-    // Search annotation for the specified annotationClass and varName
-    // and returns its value Expression
+    // Search AnnotationNode list by class
     // - returns null if not found
-    static Expression getAnnotationValueExpression(
-            List<AnnotationNode> annotations, Class<?> annotationClass, String varName) {
-        AnnotationNode annotation =
-                getAnnotationNode(annotations, annotationClass.canonicalName)
-        if (annotation == null) {
-            return null
-        }
-        return annotation.getMember(varName)
+    static AnnotationNode getAnnotationNode(
+            List<AnnotationNode> annotations, Class<?> annotationClass) {
+        return getAnnotationNode(annotations, annotationClass.canonicalName)
     }
 
 }

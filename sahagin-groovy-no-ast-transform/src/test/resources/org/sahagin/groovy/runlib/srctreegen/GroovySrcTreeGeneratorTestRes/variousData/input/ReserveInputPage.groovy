@@ -2,6 +2,7 @@ package org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorTestRes.variousData
 
 import geb.Page
 import org.sahagin.runlib.external.TestDoc
+import org.sahagin.runlib.external.CaptureStyle
 
 @org.sahagin.runlib.external.Page("予約情報入力ページ")
 class ReserveInputPage extends Page {
@@ -20,7 +21,7 @@ class ReserveInputPage extends Page {
         goNextButton (wait: true, testDoc: "ボタン「次へ」"){ $("#goto_next") }
     }
 
-    @TestDoc("宿泊日に「{year}/{month}/{day}」をセット")
+    @TestDoc(value = "宿泊日に「{year}/{month}/{day}」をセット", capture = CaptureStyle.STEP_IN)
     void setReserveDate(year, month, day) {
         reserveYear = year
         reserveMonth = month

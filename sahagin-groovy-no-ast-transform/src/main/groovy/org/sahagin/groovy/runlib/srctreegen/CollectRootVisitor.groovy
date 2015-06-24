@@ -103,8 +103,11 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
         TestMethod testMethod = new TestMethod()
         testMethod.key = SrcTreeGeneratorUtils.generateMethodKey(node, false)
         testMethod.simpleName = node.name
-        // TODO captureStyle, TestDocs, etc
-        testMethod.testDoc = utils.getMethodTestDoc(node)
+        String testDoc
+        CaptureStyle captureStyle
+        (testDoc, captureStyle) =utils.getMethodTestDoc(node)
+        testMethod.testDoc = testDoc
+        testMethod.captureStyle = captureStyle
         for (Parameter param : node.parameters) {
             testMethod.addArgVariable(param.name)
             // TODO variable argument
