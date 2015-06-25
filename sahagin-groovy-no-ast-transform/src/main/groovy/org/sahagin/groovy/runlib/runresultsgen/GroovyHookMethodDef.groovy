@@ -106,9 +106,9 @@ class GroovyHookMethodDef {
                     }
                 }
             });
-        }       
+        }
     }
-    
+
     private static SrcTree generateAndDumpSrcTree(GroovyConfig config, AcceptableLocales locales) {
         // generate and dump srcTree
         GroovySrcTreeGenerator generator = new GroovySrcTreeGenerator(
@@ -119,13 +119,13 @@ class GroovyHookMethodDef {
         YamlUtils.dump(srcTree.toYamlObject(), srcTreeFile);
         return srcTree;
     }
-    
+
     private static void initializedCheck() {
         if (manager == null) {
             throw new IllegalStateException("initialize first");
         }
     }
-    
+
     public static void beforeMethodHook(String hookedClassQualifiedName, 
         String hookedMethodSimpleName, String actualHookedMethodSimpleName) {
         initializedCheck();
