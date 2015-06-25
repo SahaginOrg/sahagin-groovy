@@ -6,4 +6,4 @@ Sahagin-Groovy can easy generate test result report for Geb, Spock, JUnit test.
 
 # For more information
 
-Coming soon.
+[Getting started](https://github.com/SahaginOrg/sahagin-groovy/wiki/Getting-started)
