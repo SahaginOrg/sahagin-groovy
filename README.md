@@ -5,3 +5,5 @@ Sahagin-Groovy is Groovy implementation for [Sahagin](https://github.com/Sahagin
 Sahagin-Groovy can easy generate test result report for Geb, Spock, JUnit test.
 
 # For more information
+
+Coming soon.
