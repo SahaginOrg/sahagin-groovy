@@ -50,6 +50,7 @@ class GroovyASTUtils {
         }
         for (AnnotationNode annotation : annotations) {
             ClassNode classNode = annotation.classNode
+            // TODO if multiple annotations for annotationClassName exists
             if (classNode.name == annotationClassName) {
                 return annotation
             }

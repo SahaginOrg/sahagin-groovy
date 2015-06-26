@@ -1,10 +1,11 @@
 package org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorTestRes.variousData.input
 
 import geb.Page
+import org.sahagin.runlib.external.PageDoc
 import org.sahagin.runlib.external.TestDoc
 import org.sahagin.runlib.external.CaptureStyle
 
-@org.sahagin.runlib.external.Page("予約情報入力ページ")
+@PageDoc("予約情報入力ページ")
 class ReserveInputPage extends Page {
     static url = "http://example.selenium.jp/reserveApp"
     static at = { title == "予約情報入力"}

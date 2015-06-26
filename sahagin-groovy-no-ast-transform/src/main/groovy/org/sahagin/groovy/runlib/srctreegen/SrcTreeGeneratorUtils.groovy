@@ -1,5 +1,8 @@
 package org.sahagin.groovy.runlib.srctreegen
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
@@ -7,6 +10,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.share.GroovyASTUtils
 import org.sahagin.runlib.additionaltestdoc.AdditionalMethodTestDoc
@@ -15,6 +19,8 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.external.Locale
 import org.sahagin.runlib.external.Page
+import org.sahagin.runlib.external.PageDoc;
+import org.sahagin.runlib.external.PageDocs;
 import org.sahagin.runlib.external.Pages
 import org.sahagin.runlib.external.TestDoc
 import org.sahagin.runlib.external.TestDocs
@@ -177,25 +183,47 @@ class SrcTreeGeneratorUtils {
     }
 
     // return empty list if no Page is found
-    private static Map<Locale, String> getAllPageTestDocs(
+    private static Map<Locale, String> getAllPageDocs(
             List<AnnotationNode> annotations) {
-        AnnotationNode pageAnnotation = GroovyASTUtils.getAnnotationNode(annotations, Page.class)
-        AnnotationNode pagesAnnotation = GroovyASTUtils.getAnnotationNode(annotations, Pages.class)
-        if (pageAnnotation != null && pagesAnnotation != null) {
-            // TODO throw IllegalTestScriptException
-            throw new RuntimeException('don not use @Page and @Pages at the same place')
-        }
 
-        // all @Page annotations including annotations contained in @Pages
+        // all @PageDoc or @Page annotations including annotations contained in @PageDocs or @Page
         List<AnnotationNode> allPageAnnotations = new ArrayList<AnnotationNode>(2)
 
-        if (pageAnnotation != null) {
-            // get @Page
-            allPageAnnotations.add(pageAnnotation)
-        } else if (pagesAnnotation != null) {
-            throw new RuntimeException('TODO implement')
+        List<Class<?>> singlePageAnnotationClasses = new ArrayList<Class<?>>(2);
+        singlePageAnnotationClasses.add(PageDoc.class);
+        singlePageAnnotationClasses.add(Page.class);
+        for (Class<?> annotationClass : singlePageAnnotationClasses) {
+            AnnotationNode annotation = GroovyASTUtils.getAnnotationNode(annotations, annotationClass);
+            if (annotation == null) {
+                continue; // annotation is not found
+            }
+            if (allPageAnnotations.size() > 0) {
+                // TODO throw IllegalTestScriptException
+                throw new RuntimeException("don't use multiple page annoations at the same place");
+            }
+            allPageAnnotations.add(annotation);
         }
-
+        
+        List<Class<?>> multiplePageAnnotationClasses = new ArrayList<Class<?>>(2);
+        multiplePageAnnotationClasses.add(PageDocs.class);
+        multiplePageAnnotationClasses.add(Pages.class);
+        for (Class<?> annotationClass : multiplePageAnnotationClasses) {
+            AnnotationNode annotation = GroovyASTUtils.getAnnotationNode(annotations, annotationClass);
+            if (annotation == null) {
+                continue; // annotation is not found
+            }
+            if (allPageAnnotations.size() > 0) {
+                // TODO throw IllegalTestScriptException
+                throw new RuntimeException("don't use multiple page annoations at the same place");
+            }
+            // get @PageDoc or @Page from @PageDocs or @Pages
+            Object value = getAnnotationValue(annotation, "value");
+            Object[] values = (Object[]) value;
+            for (Object element : values) {
+                allPageAnnotations.add((IAnnotationBinding) element);
+            }
+        }
+        
         // get resultPageMap
         Map<Locale, String> resultPageMap = 
         new HashMap<Locale, String>(allPageAnnotations.size())
@@ -235,9 +263,9 @@ class SrcTreeGeneratorUtils {
     }
     
     // return null if no Page found
-    private static String getPageTestDoc(
+    private static String getPageDoc(
         List<AnnotationNode> annotations, AcceptableLocales locales) {
-        Map<Locale, String> allPages = getAllPageTestDocs(annotations)
+        Map<Locale, String> allPages = getAllPageDocs(annotations)
         if (allPages.isEmpty()) {
             return null // no @Page found
         }
@@ -255,9 +283,9 @@ class SrcTreeGeneratorUtils {
     // returns [testDoc(String), isPage (boolean)]
     def getClassTestDoc(ClassNode classNode) {
         // TODO additional TestDoc should be prior to annotation TestDoc !?
-        String pageTestDoc = getPageTestDoc(classNode.annotations, locales)
-        if (pageTestDoc != null) {
-            return [pageTestDoc, true]
+        String pageDoc = getPageDoc(classNode.annotations, locales)
+        if (pageDoc != null) {
+            return [pageDoc, true]
         }
         CaptureStyle captureStyle
         String testDoc
