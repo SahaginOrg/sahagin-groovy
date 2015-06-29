@@ -1,0 +1,2 @@
+method:
+  spockSystem.implicitAssert: check that {0}

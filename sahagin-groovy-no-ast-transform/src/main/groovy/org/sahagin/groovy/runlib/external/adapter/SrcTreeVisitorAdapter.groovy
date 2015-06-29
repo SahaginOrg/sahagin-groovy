@@ -28,7 +28,7 @@ interface SrcTreeVisitorAdapter {
     boolean beforeCollectRootMethod(MethodNode method, CollectRootVisitor visitor)
 
     // Called while CollectRootVisitor visits a method.
-    // If returns true, the subsequent visitor or visitor listener logics are skipped for this method
+    // If returns true, the subsequent visitor or visitor listener logics for this method are skipped
     boolean collectRootMethod(MethodNode method, MethodType methodType, CollectRootVisitor visitor)
 
     // Called after all CollectRootVisitor method visits.
@@ -40,7 +40,7 @@ interface SrcTreeVisitorAdapter {
     boolean beforeCollectSubMethod(MethodNode method, CollectSubVisitor visitor)
 
     // Called while CollectSubVisitor visits a method.
-    // If returns true, the subsequent visitor or visitor listener logics are skipped for this method
+    // If returns true, the subsequent visitor or visitor listener logics for this method are skipped 
     boolean collectSubMethod(MethodNode method, MethodType methodType, CollectSubVisitor visitor)
 
     // Called after all CollectSubVisitor method visits.
@@ -52,7 +52,7 @@ interface SrcTreeVisitorAdapter {
     boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor)
 
     // Called while CollectCodeVisitor visits a method.
-    // If returns true, the subsequent visitor or visitor listener logics are skipped for this statement
+    // If returns true, the subsequent visitor or visitor listener logics for this statement are skipped
     boolean collectCode(MethodNode method, MethodType methodType, CollectCodeVisitor visitor)
 
     // Called while CollectCodeVisitor visits a method body statement.
