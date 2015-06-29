@@ -1,20 +1,18 @@
 package org.sahagin.groovy.runlib.srctreegen
 
-import java.util.List
+import static org.sahagin.runlib.external.adapter.javasystem.JavaSystemAdditionalTestDocsAdapter.*
 
-import net.sourceforge.htmlunit.corejs.javascript.ast.AstNode
-
+import org.eclipse.jdt.core.dom.InfixExpression
+import org.sahagin.share.srctree.TestMethod
+import org.sahagin.share.srctree.code.Code
+import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport
-import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.CompileUnit
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.DynamicVariable
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
@@ -28,6 +26,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
@@ -38,8 +37,6 @@ import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.CollectPhase
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.groovy.share.GroovyASTUtils
-import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
-import org.sahagin.runlib.external.adapter.AdapterContainer
 import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
@@ -395,10 +392,51 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return [classInstance, ClassHelper.CLASS_Type]
         } else {
             return generateUnknownCode(
-                    classExp.type.nameWithoutPackage,  ClassHelper.CLASS_Type)
+                    classExp.type.nameWithoutPackage, ClassHelper.CLASS_Type)
         }
     }
+    
+    // returns [Code, ClassNode]
+    private def generateAssertMethodInvokeCode(
+        Expression expression, String original, MethodNode parentMethod) {
+        String assertMethodKey = TestMethod.generateMethodKey(CLASS_QUALIFIED_NAME, METHOD_ASSERT)
+        TestMethod assertMethod = subMethodTable.getByKey(assertMethodKey)
+        assert assertMethod != null
+        SubMethodInvoke assertMethodInvoke = new SubMethodInvoke()
+        assertMethodInvoke.setSubMethodKey(assertMethodKey)
+        assertMethodInvoke.setSubMethod(assertMethod)
+        assertMethodInvoke.addArg(generateExpressionCode(expression, parentMethod).first())
+        assertMethodInvoke.setOriginal(original)
+        return [assertMethodInvoke, ClassHelper.VOID_TYPE]
+    }
+        
+    private def generateBinaryExpMethodInvokeCode(
+        BinaryExpression binaryExp, MethodNode parentMethod) {
+        String operationMethodKey
+        ClassNode type;
+        if (binaryExp.operation.text == '==') {
+            operationMethodKey = TestMethod.generateMethodKey(CLASS_QUALIFIED_NAME, METHOD_EQUALS)
+            type = ClassHelper.boolean_TYPE
+        } else if (binaryExp.operation.text == '!=') {
+            operationMethodKey = TestMethod.generateMethodKey(CLASS_QUALIFIED_NAME, METHOD_NOT_EQUALS)
+            type = ClassHelper.boolean_TYPE
+        } else {
+            return generateUnknownCode(binaryExp)
+        }
 
+        TestMethod operationMethod = subMethodTable.getByKey(operationMethodKey)
+        assert operationMethod != null
+        SubMethodInvoke operationMethodInvoke = new SubMethodInvoke()
+        operationMethodInvoke.setSubMethodKey(operationMethodKey)
+        operationMethodInvoke.setSubMethod(operationMethod)
+        Code leftCode = generateExpressionCode(binaryExp.leftExpression, parentMethod).first()
+        Code rightcode = generateExpressionCode(binaryExp.rightExpression, parentMethod).first()
+        operationMethodInvoke.addArg(leftCode)
+        operationMethodInvoke.addArg(rightcode)
+        operationMethodInvoke.setOriginal(binaryExp.text)
+        return [operationMethodInvoke, type]
+    }
+    
     // returns [UnknownCode, ClassNode]
     def generateUnknownCode(String original, ClassNode classNode) {
         UnknownCode unknownCode = new UnknownCode()
@@ -432,7 +470,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     return generateVarAssignCode(binary, parentMethod)
                 }
             } else {
-                return generateUnknownCode(expression)
+                return generateBinaryExpMethodInvokeCode(binary, parentMethod)
             }
         } else if (expression instanceof ConstantExpression) {
             ConstantExpression constant = expression as ConstantExpression
@@ -495,7 +533,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(expression)
         }
     }
-
+    
     // returns null if there is no corresponding codeLine
     CodeLine generateCodeLine(Statement statement, MethodNode method) {
         String lineText = srcUnit.source.getLine(statement.lineNumber, null)
@@ -512,6 +550,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         } else if (statement instanceof ReturnStatement) {
             Expression expression = (statement as ReturnStatement).expression
             code = generateExpressionCode(expression, method).first()
+        } else if (statement instanceof AssertStatement) {
+            code = generateAssertMethodInvokeCode(
+                (statement as AssertStatement).booleanExpression.expression, 
+                lineText.trim(), method).first()
         } else {
             code = new UnknownCode()
         }

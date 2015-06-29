@@ -287,9 +287,7 @@ class SrcTreeGeneratorUtils {
         if (pageDoc != null) {
             return [pageDoc, true]
         }
-        CaptureStyle captureStyle
-        String testDoc
-        (testDoc, captureStyle) = getTestDoc(classNode.annotations, locales)
+        String testDoc = getTestDoc(classNode.annotations, locales).first()
         if (testDoc != null) {
             return testDoc
         }
@@ -323,10 +321,7 @@ class SrcTreeGeneratorUtils {
 
     String getFieldTestDoc(FieldNode field) {
         // TODO consider additional testDoc
-        CaptureStyle captureStyle
-        String testDoc
-        (testDoc, captureStyle) = getTestDoc(field.annotations, locales)
-        return testDoc
+        return getTestDoc(field.annotations, locales).first()
     }
 
     static boolean isRootMethod(MethodNode node) {
@@ -337,9 +332,7 @@ class SrcTreeGeneratorUtils {
         if (isRootMethod(node)) {
             return false
         }
-        CaptureStyle captureStyle
-        String testDoc
-        (testDoc, captureStyle) = getMethodTestDoc(node)
+        String testDoc = getMethodTestDoc(node).first()
         return testDoc != null
     }
 

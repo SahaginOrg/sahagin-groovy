@@ -20,6 +20,7 @@ class TestMainSpec extends GebSpec {
         return calendar
     }
 
+    @TestDoc("テスト1")
     def "宿泊予約が成功すること"() {
         setup: "予約情報入力ページに遷移"
         ReserveInputPage page = to ReserveInputPage
@@ -30,11 +31,15 @@ class TestMainSpec extends GebSpec {
         page.breakfast = "on"
         page.earlyCheckInPlan = true
         page.guestName = "サンプルユーザー"
-        and: "次のページへ"
+        then:
+        assert page.guestName == "サンプルユーザ"
+        page.guestName == "サンプルユーザ"
+        when: "次のページへ"
         page.goNextButton.click()
         then: "表示された予約情報をチェック"
     }
 
+    @TestDoc("テスト2")
     def "宿泊予約が成功すること2"() {
         setup: "予約情報入力ページに遷移"
         go("http://example.selenium.jp/reserveApp")

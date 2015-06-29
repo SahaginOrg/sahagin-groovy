@@ -9,6 +9,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.geb.GebAdapter
 import org.sahagin.groovy.runlib.external.adapter.javalib.GroovyJavaLibAdapter
+import org.sahagin.groovy.runlib.external.adapter.javasystem.GroovyJavaSystemAdapter
 import org.sahagin.groovy.runlib.external.adapter.junit4.GroovyJUnit4Adapter
 import org.sahagin.groovy.runlib.external.adapter.spock.SpockAdapter
 import org.sahagin.groovy.runlib.srctreegen.GroovySrcTreeGenerator
@@ -60,9 +61,10 @@ class GroovyHookMethodDef {
         SysMessages.globalInitialize(locales);
 
         // default adapters
+        new GroovyJavaSystemAdapter().initialSetAdapter();
+        new GroovyJavaLibAdapter().initialSetAdapter();
         new GroovyJUnit4Adapter().initialSetAdapter();
         new SpockAdapter().initialSetAdapter();
-        new GroovyJavaLibAdapter().initialSetAdapter();
         new GebAdapter().initialSetAdapter();        
 
         for (String adapterClassName : config.adapterClassNames) {

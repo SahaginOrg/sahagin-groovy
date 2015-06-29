@@ -4,6 +4,7 @@ import org.junit.Test
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.runlib.external.adapter.geb.GebAdapter
 import org.sahagin.groovy.runlib.external.adapter.javalib.GroovyJavaLibAdapter
+import org.sahagin.groovy.runlib.external.adapter.javasystem.GroovyJavaSystemAdapter
 import org.sahagin.groovy.runlib.external.adapter.junit4.GroovyJUnit4Adapter
 import org.sahagin.groovy.runlib.external.adapter.spock.SpockAdapter
 import org.sahagin.groovy.share.GroovyConfig
@@ -25,6 +26,7 @@ class GroovySrcTreeGeneratorTest {
         AcceptableLocales locales = AcceptableLocales.getInstance(config.userLocale)
         GroovyAdapterContainer.globalInitialize(locales, config.testFramework)
         SysMessages.globalInitialize(locales)
+        new GroovyJavaSystemAdapter().initialSetAdapter()
         new GroovyJavaLibAdapter().initialSetAdapter()
         new GroovyJUnit4Adapter().initialSetAdapter()
         new SpockAdapter().initialSetAdapter()
