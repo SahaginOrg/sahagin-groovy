@@ -35,19 +35,19 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
     // Searches static content initialization block from the specific static initializer method node.
     // Returns null if not found
-    private BlockStatement getContentClosureBlock(MethodNode node) {
-        if (!GroovyASTUtils.inheritsFromClass(node.declaringClass, "geb.Page")) {
+    private BlockStatement getContentClosureBlock(MethodNode method) {
+        if (!GroovyASTUtils.inheritsFromClass(method.declaringClass, "geb.Page")) {
             return null
         }
         // Search static initializer
         // since content DSL closure logic has been moved to static constructor part by Groovy compiler,
-        if (!node.staticConstructor) {
+        if (!method.staticConstructor) {
             return null
         }
-        if (!(node.code instanceof BlockStatement)) {
+        if (!(method.code instanceof BlockStatement)) {
             return null
         }
-        List<Statement> blockStatements = (node.code as BlockStatement).statements
+        List<Statement> blockStatements = (method.code as BlockStatement).statements
         for (Statement blockStatement : blockStatements) {
             if (!(blockStatement instanceof ExpressionStatement)) {
                 continue
@@ -134,8 +134,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
     // collect all page object content values and types before collecting other codes
     @Override
-    boolean beforeCollectCode(MethodNode node, CollectCodeVisitor visitor) {
-        BlockStatement contentClosureBlock = getContentClosureBlock(node)
+    boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor) {
+        BlockStatement contentClosureBlock = getContentClosureBlock(method)
         if (contentClosureBlock == null) {
             return false
         }
@@ -162,13 +162,13 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
                 continue
             }
             TestField testField = visitor.fieldTable.getByKey(
-                SrcTreeGeneratorUtils.generateFieldKey(node.declaringClass, methodCall.methodAsString))
+                SrcTreeGeneratorUtils.generateFieldKey(method.declaringClass, methodCall.methodAsString))
             assert testField != null
 
             Code fieldValueCode
             ClassNode fieldValueClass
             (fieldValueCode, fieldValueClass) =
-            visitor.generateExpressionCode(fieldValue, node)
+            visitor.generateExpressionCode(fieldValue, method)
             // TODO maybe memo concept can be used in many place
             fieldValueCode.rawASTTypeMemo = fieldValueClass
             testField.value = fieldValueCode
