@@ -4,8 +4,10 @@ method:
   geb.Browser.to:
     java.lang.Class,Object[]: 「{0}」にページ遷移
   geb.navigator.Navigator.click: "{this}をクリック"
+  geb.navigator.Navigator.text: "{this}の表示テキスト"
   geb.navigator.Navigator.value:
     Object: "{this}に「{0}」をセット"
+    void: "{this}の値"
   geb.Page.$:
     # TODO temporal value..
     java.util.Map: 要素「{0}」
