@@ -233,21 +233,29 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns [TestMethod, MethodNode]
     private def getThisOrSuperTestMethod(ClassNode classNode,
             String methodAsString, List<ClassNode> argClasses) {
-        TestMethod invocationMethod
-        MethodNode invocationMethodNode
-        boolean isSuper
-
         // check this class and super class
-        (invocationMethod, invocationMethodNode) = getThisOrSuperMethodSub(
+        TestMethod invocationMethodNoDelegate
+        MethodNode invocationMethodNodeNoDelegate
+        (invocationMethodNoDelegate, invocationMethodNodeNoDelegate) = getThisOrSuperMethodSub(
             classNode, methodAsString, argClasses, false)
-        if (invocationMethod != null) {
-            return [invocationMethod, invocationMethodNode]
+        if (invocationMethodNoDelegate != null) {
+            return [invocationMethodNoDelegate, invocationMethodNodeNoDelegate]
         }
 
         // check only delegateTo class for this class and super class
+        TestMethod invocationMethod
+        MethodNode invocationMethodNode
         (invocationMethod, invocationMethodNode) = getThisOrSuperMethodSub(
             classNode, methodAsString, argClasses, true)
         if (invocationMethod != null) {
+            return [invocationMethod, invocationMethodNode]
+        }
+        
+        // TestMethod is not found, but at least MethodNode is found
+        if (invocationMethodNodeNoDelegate != null) {
+            return [invocationMethodNoDelegate, invocationMethodNodeNoDelegate]
+        }
+        if (invocationMethodNode != null) {
             return [invocationMethod, invocationMethodNode]
         }
 
@@ -298,7 +306,11 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         (invocationMethod, invocationMethodNode) =
                 getThisOrSuperTestMethod(receiverClassNode, methodAsString, argClasses)
         if (invocationMethod == null || invocationMethodNode == null) {
-            return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
+            if (invocationMethodNode == null) {
+                return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
+            } else {
+                return generateUnknownCode(original, invocationMethodNode.returnType)
+            }
         }
 
         SubMethodInvoke subMethodInvoke = new SubMethodInvoke()
