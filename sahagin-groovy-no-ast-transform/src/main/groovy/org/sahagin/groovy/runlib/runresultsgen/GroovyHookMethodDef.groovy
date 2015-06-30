@@ -12,6 +12,7 @@ import org.sahagin.groovy.runlib.external.adapter.javalib.GroovyJavaLibAdapter
 import org.sahagin.groovy.runlib.external.adapter.javasystem.GroovyJavaSystemAdapter
 import org.sahagin.groovy.runlib.external.adapter.junit4.GroovyJUnit4Adapter
 import org.sahagin.groovy.runlib.external.adapter.spock.SpockAdapter
+import org.sahagin.groovy.runlib.external.adapter.webdriver.GroovyWebDriverAdapter
 import org.sahagin.groovy.runlib.srctreegen.GroovySrcTreeGenerator
 import org.sahagin.groovy.share.GroovyConfig
 import org.sahagin.report.HtmlReport
@@ -64,6 +65,7 @@ class GroovyHookMethodDef {
         new GroovyJavaSystemAdapter().initialSetAdapter()
         new GroovyJavaLibAdapter().initialSetAdapter()
         new GroovyJUnit4Adapter().initialSetAdapter()
+        new GroovyWebDriverAdapter().initialSetAdapter()
         new SpockAdapter().initialSetAdapter()
         new GebAdapter().initialSetAdapter()       
 
