@@ -66,9 +66,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private CollectPhase phase
 
     CollectCodeVisitor(SourceUnit srcUnit,
-        TestClassTable rootClassTable, TestClassTable subClassTable,
-        TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
-        TestFieldTable fieldTable, SrcTreeGeneratorUtils utils, CollectPhase phase) {
+    TestClassTable rootClassTable, TestClassTable subClassTable,
+    TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
+    TestFieldTable fieldTable, SrcTreeGeneratorUtils utils, CollectPhase phase) {
         this.srcUnit = srcUnit
         this.rootClassTable = rootClassTable
         this.subClassTable = subClassTable
@@ -111,10 +111,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     protected SourceUnit getSourceUnit() {
         return null // dummy
     }
-   
+
     private ClassNode getDelegateToClassNode(ClassNode classNode) {
         TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
-            GroovyASTUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
+                GroovyASTUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
         if (testClass == null) {
             return null
         }
@@ -130,7 +130,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
         return ClassHelper.make(delegateToClass)
     }
-     
+
     private static FieldNode getThisOrSuperFieldNode(ClassNode classNode, String fieldName) {
         ClassNode parentNode = classNode
         while (parentNode != null) {
@@ -142,7 +142,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
         return null
     }
-    
+
     // returns [TestField, FieldNode]
     private def getThisOrSuperFieldSubNoDelegate(ClassNode classNode, String fieldName) {
         FieldNode fieldNode = getThisOrSuperFieldNode(classNode, fieldName)
@@ -153,9 +153,61 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         TestField testField = fieldTable.getByKey(fieldKey)
         return [testField, fieldNode]
     }
-        
+
+    // returns [TestField, FieldNode]
+    private def getThisOrSuperTestField(ClassNode classNode, String fieldName) {
+        // check this class and super class
+        TestField field
+        FieldNode fieldNode
+        (field, fieldNode) = getThisOrSuperFieldSubNoDelegate(classNode, fieldName)
+        if (field != null) {
+            return [field, fieldNode]
+        }
+
+        // check only delegateTo class for this class and super class
+        TestField fieldDelegate
+        FieldNode fieldNodeDelegate
+        ClassNode parentNode = classNode
+        outerLoop: while (parentNode != null) {
+            ClassNode delegateToClassNode = getDelegateToClassNode(parentNode)
+            while (delegateToClassNode != null) {
+                (fieldDelegate, fieldNodeDelegate) =
+                        getThisOrSuperFieldSubNoDelegate(delegateToClassNode, fieldName)
+                if (fieldNodeDelegate != null) {
+                    break outerLoop
+                }
+                delegateToClassNode = getDelegateToClassNode(delegateToClassNode)
+            }
+            parentNode = parentNode.superClass
+        }
+        if (fieldDelegate != null) {
+            return [fieldDelegate, fieldNodeDelegate]
+        }
+
+        // Some fields are defined dynamically (such as Geb page object contents).
+        // These field does not have any FieldeNode,
+        // but these information is set on TestField memo.
+        // TODO should search TestField for super class or delegated class?
+        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(classNode, fieldName)
+        TestField fieldDynamic = fieldTable.getByKey(fieldKey)
+        if (fieldDynamic != null) {
+            return [fieldDynamic, null]
+        }
+
+        // TestField is not found, but at least FieldNode is found
+        if (fieldNode != null) {
+            return [field, fieldNode]
+        }
+        if (fieldNodeDelegate != null) {
+            return [fieldDelegate, fieldNodeDelegate]
+        }
+
+        // no FieldNode found
+        return [null, null]
+    }
+
     private static MethodNode getThisOrSuperMethodNode(
-        ClassNode classNode, String methodName, List<ClassNode> argClasses) {
+            ClassNode classNode, String methodName, List<ClassNode> argClasses) {
         ClassNode parentNode = classNode
         while (parentNode != null) {
             for (MethodNode method : parentNode.getDeclaredMethods(methodName)) {
@@ -184,6 +236,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 boolean matched = true
 
                 for (int i = 0; i <= nonVarLengthMaxIndex; i++) {
+                    assert argClasses.get(i) != null : methodName
                     if (!argClasses.get(i).isDerivedFrom(params[i].type)) {
                         matched = false
                         break // quit argument type checking
@@ -223,7 +276,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         TestMethod testMethod = SrcTreeGeneratorUtils.getTestMethod(methodNode, subMethodTable)
         return [testMethod, methodNode]
     }
-        
+
     // returns [TestMethod, MethodNode]
     private def getThisOrSuperTestMethod(ClassNode classNode,
             String methodAsString, List<ClassNode> argClasses) {
@@ -231,7 +284,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         TestMethod method
         MethodNode methodNode
         (method, methodNode) = getThisOrSuperMethodSubNoDelegate(
-            classNode, methodAsString, argClasses)
+                classNode, methodAsString, argClasses)
         if (method != null) {
             return [method, methodNode]
         }
@@ -244,7 +297,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             ClassNode delegateToClassNode = getDelegateToClassNode(parentNode)
             while (delegateToClassNode != null) {
                 (methodDelegate, methodNodeDelegate) = getThisOrSuperMethodSubNoDelegate(
-                    delegateToClassNode, methodAsString, argClasses)
+                        delegateToClassNode, methodAsString, argClasses)
                 if (methodNodeDelegate != null) {
                     break outerLoop
                 }
@@ -255,7 +308,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         if (methodDelegate != null) {
             return [methodDelegate, methodNodeDelegate]
         }
-        
+
         // TestMethod is not found, but at least MethodNode is found
         if (methodNode != null) {
             return [method, methodNode]
@@ -280,10 +333,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             // static method call
             receiverClassNode = receiver as ClassNode
             receiverCode = generateUnknownCode(
-                receiverClassNode.nameWithoutPackage, receiverClassNode).first()
+                    receiverClassNode.nameWithoutPackage, receiverClassNode).first()
         } else if (receiver instanceof Expression) {
             (receiverCode, receiverClassNode) = generateExpressionCode(
-                receiver as Expression, parentMethod)
+                    receiver as Expression, parentMethod)
         } else {
             // TODO receiver may be null for constructor..
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
@@ -351,7 +404,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         TestClass subClass = subClassTable.getByKey(classKey)
         // TODO geb specific logic
         if ((subClass != null && subClass instanceof PageClass) ||
-            GroovyASTUtils.inheritsFromClass(leftClass, "geb.Page")) {
+        GroovyASTUtils.inheritsFromClass(leftClass, "geb.Page")) {
             // ignore left for page type variable assignment
             // since usually page type variable is not used in other TestDoc
             return [rightCode, rightClass]
@@ -364,26 +417,34 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [assign, ClassHelper.VOID_TYPE]
     }
 
+    // fieldOwnerType..class declaring this field or field reference receiver Type
+    // compilerCalcedFieldType..this is less trustable
     // returns [Code, ClassNode]
     private def generateFieldCodeSub(String fieldName,
-        ClassNode fieldOwnerType, Code receiverCode, String original, ClassNode fieldVarType) {
-        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(fieldOwnerType, fieldName)
-        TestField testField = fieldTable.getByKey(fieldKey)
-        if (testField == null) {
-            return generateUnknownCode(original, fieldVarType)
+            ClassNode fieldOwnerType, Code receiverCode, String original, ClassNode compilerCalcedFieldType) {
+        TestField testField
+        FieldNode fieldNode
+        (testField, fieldNode) = getThisOrSuperTestField(fieldOwnerType, fieldName)
+        ClassNode fieldType
+        if (fieldNode != null) {
+            fieldType = fieldNode.getType()
+        } else if (testField != null && testField.value != null &&
+        testField.value.rawASTTypeMemo != null) {
+            // TODO maybe memo concept can be used in many place
+            fieldType = testField.value.rawASTTypeMemo
+        } else {
+            fieldType = compilerCalcedFieldType
         }
+
+        if (testField == null) {
+            return generateUnknownCode(original, fieldType)
+        }
+
         Field field = new Field()
         field.fieldKey = testField.key
         field.field = testField
         field.thisInstance = receiverCode
         field.original = original
-        ClassNode fieldType
-        if (testField.value != null && testField.value.rawASTTypeMemo != null) {
-            // TODO maybe memo concept can be used in many place
-            fieldType = testField.value.rawASTTypeMemo as ClassNode
-        } else {
-            fieldType = fieldVarType
-        }
         return [field, fieldType]
     }
 
@@ -394,7 +455,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         ClassNode receiverClass
         (receiverCode, receiverClass) = generateExpressionCode(receiver, parentMethod)
         return generateFieldCodeSub(property.propertyAsString,
-            receiverClass, receiverCode, property.text, property.type)
+                receiverClass, receiverCode, property.text, property.type)
     }
 
     // returns [Code, ClassNode]
@@ -413,10 +474,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                     classExp.type.nameWithoutPackage, ClassHelper.CLASS_Type)
         }
     }
-    
+
     // returns [Code, ClassNode]
     private def generateAssertMethodInvokeCode(
-        Expression expression, String original, MethodNode parentMethod) {
+            Expression expression, String original, MethodNode parentMethod) {
         String assertMethodKey = TestMethod.generateMethodKey(CLASS_QUALIFIED_NAME, METHOD_ASSERT)
         TestMethod assertMethod = subMethodTable.getByKey(assertMethodKey)
         assert assertMethod != null
@@ -427,9 +488,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         assertMethodInvoke.setOriginal(original)
         return [assertMethodInvoke, ClassHelper.VOID_TYPE]
     }
-        
+
     private def generateBinaryExpMethodInvokeCode(
-        BinaryExpression binaryExp, MethodNode parentMethod) {
+            BinaryExpression binaryExp, MethodNode parentMethod) {
         String operationMethodKey
         ClassNode classNode;
         if (binaryExp.operation.text == '==') {
@@ -454,7 +515,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         operationMethodInvoke.setOriginal(binaryExp.text)
         return [operationMethodInvoke, classNode]
     }
-    
+
     // returns [UnknownCode, ClassNode]
     def generateUnknownCode(String original, ClassNode classNode) {
         UnknownCode unknownCode = new UnknownCode()
@@ -475,14 +536,14 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             strCode.value = null
             strCode.original = "null"
             return [strCode, ClassHelper.OBJECT_TYPE]
-        // TODO handle local variable assignment
+            // TODO handle local variable assignment
         } else if (expression instanceof BinaryExpression) {
             BinaryExpression binary = expression as BinaryExpression
             if (binary instanceof DeclarationExpression
-                || binary.operation.text == "=") {
+            || binary.operation.text == "=") {
                 // variable declaration or assignment
                 if (binary.rightExpression == null
-                    || binary.rightExpression instanceof EmptyExpression) {
+                || binary.rightExpression instanceof EmptyExpression) {
                     return generateUnknownCode(expression)
                 } else {
                     return generateVarAssignCode(binary, parentMethod)
@@ -502,9 +563,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 return generateUnknownCode(expression)
             }
         } else if (expression instanceof PropertyExpression) {
-            // property or field access with explicit instance or class variable
+            // property or field access with explicit receiver
             // (such as 'page.userName'). Any property or field access without
-            // instance or class variable (such as 'userName') is handled as VariableExpression,
+            // explicit receiver (such as 'userName') is handled as VariableExpression,
             // not PropertyExpression
             PropertyExpression property = expression as PropertyExpression
             return generateFieldCode(property, parentMethod)
@@ -521,12 +582,12 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             VariableExpression variable = expression as VariableExpression
             if (variable.name == "this") {
                 // this keyword
-                
+
                 Code code = generateUnknownCode(expression).first()
                 return [code, parentMethod.declaringClass]
             } else if (variable.accessedVariable instanceof Parameter) {
                 // method (or constructor) argument reference
-            
+
                 Parameter param = variable.accessedVariable as Parameter
                 int index = -1
                 for (int i = 0; i < parentMethod.parameters.length; i++) {
@@ -548,10 +609,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 // or defined dynamically (such as Geb page object contents).
                 DynamicVariable dynamicVar = variable.accessedVariable as DynamicVariable
                 return generateFieldCodeSub(dynamicVar.name,
-                    parentMethod.declaringClass, null, expression.text, dynamicVar.type)
+                        parentMethod.declaringClass, null, expression.text, dynamicVar.type)
             } else {
                 // local variable reference
-            
+
                 return generateUnknownCode(expression)
             }
         } else if (expression instanceof ClassExpression) {
@@ -562,7 +623,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    // returns [CodeLine, ClassNode]  
+    // returns [CodeLine, ClassNode]
     // returns [null, null] if there is no corresponding codeLine
     def generateCodeLine(Statement statement, Code code, ClassNode classNode) {
         String lineText = srcUnit.source.getLine(statement.lineNumber, null)
@@ -571,7 +632,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             // Just ignore such statements
             return [null, null]
         }
-        
+
         CodeLine codeLine = new CodeLine()
         // TODO line number OK ?
         codeLine.startLine = statement.lineNumber
@@ -583,7 +644,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         code.original = lineText.trim()
         return [codeLine, classNode]
     }
-    
+
     // returns [CodeLine, ClassNode]
     // returns [null, null] if there is no corresponding codeLine
     def generateCodeLine(Statement statement, MethodNode method) {
@@ -604,19 +665,19 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             (code, classNode) = generateExpressionCode(expression, method)
         } else if (statement instanceof AssertStatement) {
             (code, classNode) = generateAssertMethodInvokeCode(
-                (statement as AssertStatement).booleanExpression.expression, lineText.trim(), method)
+                    (statement as AssertStatement).booleanExpression.expression, lineText.trim(), method)
         } else {
             code = new UnknownCode()
             classNode = ClassHelper.VOID_TYPE // dummy
         }
-        
+
         return generateCodeLine(statement, code, classNode)
     }
 
     @Override
     void visitMethod(MethodNode node) {
         List<SrcTreeVisitorAdapter> listeners =
-        GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
+                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         if (phase == CollectPhase.BEFORE) {
             for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.beforeCollectCode(node, this)) {
