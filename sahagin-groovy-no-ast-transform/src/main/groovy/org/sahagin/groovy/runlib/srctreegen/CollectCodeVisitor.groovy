@@ -496,6 +496,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 return generateUnknownCode(expression)
             }
         } else if (expression instanceof PropertyExpression) {
+            // property or field access with explicit instance or class variable
+            // (such as 'page.userName'). Any property or field access without
+            // instance or class variable (such as 'userName') is handled as VariableExpression,
+            // not PropertyExpression
             PropertyExpression property = expression as PropertyExpression
             return generateFieldCode(property, parentMethod)
         } else if (expression instanceof MethodCallExpression) {
@@ -511,9 +515,12 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             VariableExpression variable = expression as VariableExpression
             if (variable.name == "this") {
                 // this keyword
+                
                 Code code = generateUnknownCode(expression).first()
                 return [code, parentMethod.declaringClass]
             } else if (variable.accessedVariable instanceof Parameter) {
+                // method (or constructor) argument reference
+            
                 Parameter param = variable.accessedVariable as Parameter
                 int index = -1
                 for (int i = 0; i < parentMethod.parameters.length; i++) {
@@ -530,12 +537,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 methodArg.original = expression.text
                 return [methodArg, parentMethod.parameters[index].type]
             } else if (variable.accessedVariable instanceof DynamicVariable) {
-                // this may be dynamically defined property (such as Geb page object contents),
-                // so try to find testField for this class
+                // variable reference neither method argument nor local variable.
+                // This variable is maybe defined as field or property on this or super class
+                // or defined dynamically (such as Geb page object contents).
                 DynamicVariable dynamicVar = variable.accessedVariable as DynamicVariable
                 return generateFieldCodeSub(dynamicVar.name,
                     parentMethod.declaringClass, null, expression.text, dynamicVar.type)
             } else {
+                // local variable reference
+            
                 return generateUnknownCode(expression)
             }
         } else if (expression instanceof ClassExpression) {
