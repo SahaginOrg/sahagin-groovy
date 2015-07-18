@@ -11,6 +11,7 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.DynamicVariable
+import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -110,7 +111,49 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     protected SourceUnit getSourceUnit() {
         return null // dummy
     }
-
+   
+    private ClassNode getDelegateToClassNode(ClassNode classNode) {
+        TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
+            GroovyASTUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
+        if (testClass == null) {
+            return null
+        }
+        if (testClass.delegateToTestClass == null) {
+            return null
+        }
+        String delegateToClassQualifiedName = testClass.delegateToTestClass.qualifiedName
+        Class<?> delegateToClass = null
+        try {
+            delegateToClass = Class.forName(delegateToClassQualifiedName)
+        } catch (ClassNotFoundException e) {
+            return null
+        }
+        return ClassHelper.make(delegateToClass)
+    }
+     
+    private static FieldNode getThisOrSuperFieldNode(ClassNode classNode, String fieldName) {
+        ClassNode parentNode = classNode
+        while (parentNode != null) {
+            FieldNode fieldNode = parentNode.getField(fieldName)
+            if (fieldNode != null) {
+                return fieldNode
+            }
+            parentNode = parentNode.superClass
+        }
+        return null
+    }
+    
+    // returns [TestField, FieldNode]
+    private def getThisOrSuperFieldSubNoDelegate(ClassNode classNode, String fieldName) {
+        FieldNode fieldNode = getThisOrSuperFieldNode(classNode, fieldName)
+        if (fieldNode == null) {
+            return [null, null]
+        }
+        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(fieldNode.getOwner(), fieldName)
+        TestField testField = fieldTable.getByKey(fieldKey)
+        return [testField, fieldNode]
+    }
+        
     private static MethodNode getThisOrSuperMethodNode(
         ClassNode classNode, String methodName, List<ClassNode> argClasses) {
         ClassNode parentNode = classNode
@@ -180,85 +223,48 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         TestMethod testMethod = SrcTreeGeneratorUtils.getTestMethod(methodNode, subMethodTable)
         return [testMethod, methodNode]
     }
-
-    private ClassNode getDelegateToClassNode(ClassNode classNode) {
-        TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
-            GroovyASTUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
-        if (testClass == null) {
-            return null
-        }
-        if (testClass.delegateToTestClass == null) {
-            return null
-        }
-        String delegateToClassQualifiedName = testClass.delegateToTestClass.qualifiedName
-        Class<?> delegateToClass = null
-        try {
-            delegateToClass = Class.forName(delegateToClassQualifiedName)
-        } catch (ClassNotFoundException e) {
-            return null
-        }
-        return ClassHelper.make(delegateToClass)
-    }
-
+        
     // returns [TestMethod, MethodNode]
-    // - if delegate is true, check only delegateTo class
-    private def getThisOrSuperMethodSub(ClassNode classNode,
-            String methodAsString, List<ClassNode> argClasses, boolean delegate) {
-        if (!delegate) {
-            TestMethod testMethod
-            MethodNode methodNode
-            (testMethod, methodNode) = getThisOrSuperMethodSubNoDelegate(
-                classNode, methodAsString, argClasses)
-            return [testMethod, methodNode]
+    private def getThisOrSuperTestMethod(ClassNode classNode,
+            String methodAsString, List<ClassNode> argClasses) {
+        // check this class and super class
+        TestMethod method
+        MethodNode methodNode
+        (method, methodNode) = getThisOrSuperMethodSubNoDelegate(
+            classNode, methodAsString, argClasses)
+        if (method != null) {
+            return [method, methodNode]
         }
 
+        // check only delegateTo class for this class and super class
+        TestMethod methodDelegate
+        MethodNode methodNodeDelegate
         ClassNode parentNode = classNode
-        while (parentNode != null) {
+        outerLoop: while (parentNode != null) {
             ClassNode delegateToClassNode = getDelegateToClassNode(parentNode)
             while (delegateToClassNode != null) {
-                TestMethod testMethod
-                MethodNode methodNode
-                (testMethod, methodNode) = getThisOrSuperMethodSubNoDelegate(
+                (methodDelegate, methodNodeDelegate) = getThisOrSuperMethodSubNoDelegate(
                     delegateToClassNode, methodAsString, argClasses)
-                if (methodNode != null) {
-                    return [testMethod, methodNode]
+                if (methodNodeDelegate != null) {
+                    break outerLoop
                 }
                 delegateToClassNode = getDelegateToClassNode(delegateToClassNode)
             }
             parentNode = parentNode.superClass
         }
-        return [null, null]
-    }
-
-    // returns [TestMethod, MethodNode]
-    private def getThisOrSuperTestMethod(ClassNode classNode,
-            String methodAsString, List<ClassNode> argClasses) {
-        // check this class and super class
-        TestMethod invocationMethodNoDelegate
-        MethodNode invocationMethodNodeNoDelegate
-        (invocationMethodNoDelegate, invocationMethodNodeNoDelegate) = getThisOrSuperMethodSub(
-            classNode, methodAsString, argClasses, false)
-        if (invocationMethodNoDelegate != null) {
-            return [invocationMethodNoDelegate, invocationMethodNodeNoDelegate]
-        }
-
-        // check only delegateTo class for this class and super class
-        TestMethod invocationMethod
-        MethodNode invocationMethodNode
-        (invocationMethod, invocationMethodNode) = getThisOrSuperMethodSub(
-            classNode, methodAsString, argClasses, true)
-        if (invocationMethod != null) {
-            return [invocationMethod, invocationMethodNode]
+        if (methodDelegate != null) {
+            return [methodDelegate, methodNodeDelegate]
         }
         
         // TestMethod is not found, but at least MethodNode is found
-        if (invocationMethodNodeNoDelegate != null) {
-            return [invocationMethodNoDelegate, invocationMethodNodeNoDelegate]
+        if (methodNode != null) {
+            return [method, methodNode]
         }
-        if (invocationMethodNode != null) {
-            return [invocationMethod, invocationMethodNode]
+        if (methodNodeDelegate != null) {
+            return [methodDelegate, methodNodeDelegate]
         }
 
+        // no MethodNode found
         return [null, null]
     }
 
