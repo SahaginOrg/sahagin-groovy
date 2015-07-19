@@ -28,6 +28,20 @@ class GroovyASTUtils {
         return result
     }
     
+    static String getterName(String fieldName) {
+        if (fieldName == null || fieldName == "") {
+            throw new IllegalArgumentException(fieldName)
+        }
+        return "get" + fieldName.substring(0, 1).toUpperCase(Locale.ROOT) + fieldName.substring(1)
+    }
+
+    static String setterName(String fieldName) {
+        if (fieldName == null || fieldName == "") {
+            throw new IllegalArgumentException(fieldName)
+        }
+        return "set" + fieldName.substring(0, 1).toUpperCase(Locale.ROOT) + fieldName.substring(1)
+    }
+    
     // check whether classNode is the class for className
     // or inherits from the class for className
     static boolean inheritsFromClass(ClassNode classNode, String className) {

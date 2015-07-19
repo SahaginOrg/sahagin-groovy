@@ -205,7 +205,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         // no FieldNode found
         return [null, null]
     }
-
+   
     private static MethodNode getThisOrSuperMethodNode(
             ClassNode classNode, String methodName, List<ClassNode> argClasses) {
         ClassNode parentNode = classNode
@@ -398,7 +398,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         (rightCode, rightClass) = generateExpressionCode(right, parentMethod)
         Code leftCode
         ClassNode leftClass
-        (leftCode, leftClass) = generateExpressionCode(left, parentMethod)
+        (leftCode, leftClass) = generateSetterExpressionCode(left, parentMethod)
 
         String classKey = GroovyASTUtils.getClassQualifiedName(leftClass)
         TestClass subClass = subClassTable.getByKey(classKey)
@@ -418,10 +418,10 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // fieldOwnerType..class declaring this field or field reference receiver Type
-    // compilerCalcedFieldType..this is less trustable
+    // compilerCalcedFieldType..this is less reliable
     // returns [Code, ClassNode]
-    private def generateFieldCodeSub(String fieldName,
-            ClassNode fieldOwnerType, Code receiverCode, String original, ClassNode compilerCalcedFieldType) {
+    private def generateFieldCode(String fieldName, ClassNode fieldOwnerType,
+            Code receiverCode, String original, ClassNode compilerCalcedFieldType, boolean isSetter) {
         TestField testField
         FieldNode fieldNode
         (testField, fieldNode) = getThisOrSuperTestField(fieldOwnerType, fieldName)
@@ -432,6 +432,19 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         testField.value.rawASTTypeMemo != null) {
             // TODO maybe memo concept can be used in many place
             fieldType = testField.value.rawASTTypeMemo
+        } else if (!isSetter) {
+            // TODO setter check if isSetter flag is true
+            // Groovy automatically generate field from getter method
+            String getterName = GroovyASTUtils.getterName(fieldName)
+            TestMethod getterMethod
+            MethodNode getterMethodNode
+            (getterMethod, getterMethodNode) = getThisOrSuperTestMethod(
+                fieldOwnerType, getterName, new ArrayList<ClassNode>(0))
+            if (getterMethodNode != null) {
+                fieldType = getterMethodNode.returnType
+            } else {
+                fieldType = compilerCalcedFieldType
+            }
         } else {
             fieldType = compilerCalcedFieldType
         }
@@ -448,14 +461,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [field, fieldType]
     }
 
+    // isSetter..represents getter if this flag is false
     // returns [Code, ClassNode]
-    def generateFieldCode(PropertyExpression property, MethodNode parentMethod) {
+    def generatePropFieldCode(PropertyExpression property, MethodNode parentMethod, boolean isSetter) {
         Expression receiver = property.objectExpression
         Code receiverCode
         ClassNode receiverClass
         (receiverCode, receiverClass) = generateExpressionCode(receiver, parentMethod)
-        return generateFieldCodeSub(property.propertyAsString,
-                receiverClass, receiverCode, property.text, property.type)
+        return generateFieldCode(property.propertyAsString,
+                receiverClass, receiverCode, property.text, property.type, isSetter)
     }
 
     // returns [Code, ClassNode]
@@ -528,7 +542,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         // TODO using text property is temporal logic
         return generateUnknownCode(expression.text, expression.type)
     }
-
+    
     // returns [Code, ClassNode]
     def generateExpressionCode(Expression expression, MethodNode parentMethod) {
         if (expression == null) {
@@ -568,7 +582,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             // explicit receiver (such as 'userName') is handled as VariableExpression,
             // not PropertyExpression
             PropertyExpression property = expression as PropertyExpression
-            return generateFieldCode(property, parentMethod)
+            return generatePropFieldCode(property, parentMethod, false)
         } else if (expression instanceof MethodCallExpression) {
             MethodCallExpression methodCall = expression as MethodCallExpression
             return generateMethodInvokeCode(methodCall, parentMethod)
@@ -608,8 +622,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
                 // This variable is maybe defined as field or property on this or super class
                 // or defined dynamically (such as Geb page object contents).
                 DynamicVariable dynamicVar = variable.accessedVariable as DynamicVariable
-                return generateFieldCodeSub(dynamicVar.name,
-                        parentMethod.declaringClass, null, expression.text, dynamicVar.type)
+                return generateFieldCode(dynamicVar.name,
+                        parentMethod.declaringClass, null, expression.text, dynamicVar.type, false)
             } else {
                 // local variable reference
 
@@ -621,6 +635,22 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         } else {
             return generateUnknownCode(expression)
         }
+    }
+    
+    def generateSetterExpressionCode(Expression expression, MethodNode parentMethod) {
+        if (expression instanceof PropertyExpression) {
+            PropertyExpression property = expression as PropertyExpression
+            return generatePropFieldCode(property, parentMethod, true)
+        } else if (expression instanceof VariableExpression) {
+            VariableExpression variable = expression as VariableExpression
+            if (variable.name != "this" &&
+            variable.accessedVariable instanceof DynamicVariable) {
+                DynamicVariable dynamicVar = variable.accessedVariable as DynamicVariable
+                return generateFieldCode(dynamicVar.name,
+                        parentMethod.declaringClass, null, expression.text, dynamicVar.type, true)
+            }
+        }
+        return generateExpressionCode(expression, parentMethod);
     }
 
     // returns [CodeLine, ClassNode]
