@@ -1,6 +1,8 @@
 package org.sahagin.groovy.runlib.runresultsgen
 
 import java.io.File
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.List
 import java.util.logging.Logger
 
@@ -42,10 +44,22 @@ class GroovyHookMethodDef {
     private static Logger logger = Logging.getLogger(GroovyHookMethodDef.class.name)
     private static HookMethodManager manager = null
     
+    private static boolean javaAgentArgCheck() {
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        for (String arg : runtimeMxBean.getInputArguments()) {
+            if (arg != null && arg.toLowerCase().startsWith("-javaagent")) {
+                // should not set both Sahagin-groovy hook and Sahagin-Java hook at the same time
+                // TODO don't throw error if javaagent option is not for sahagin-xxx.jar
+                throw new RuntimeException("Sahagin-groovy does not support javaagent option now")
+            }
+        }
+    }
+    
     static void initialize() {
         if (manager != null) {
             return
         }
+        javaAgentArgCheck()
         
         String configFilePath
         String propValue = System.getProperty("sahagin.configPath")
