@@ -30,8 +30,8 @@ import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.sahagin.share.srctree.code.TestStepLabel
 
 class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
-    String currentSpockLabel = null
-
+    private String currentSpockLabel = null
+    
     @Override
     List<CodeLine> collectMethodStatementCode(Statement statement,
             MethodNode method, MethodType methodType, CollectCodeVisitor visitor) {
