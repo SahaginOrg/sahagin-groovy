@@ -9,7 +9,7 @@
   <version>0.8.99.3-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Sahagin Groovy Parent</name>
-  <description>This is Sahagin Groovy internal module.</description>
+  <description>Parent project for Sahagin Groovy and its internal module.</description>
   <url>https://github.com/SahaginOrg/sahagin-groovy</url>
   <licenses>
     <license>

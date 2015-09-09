@@ -10,7 +10,7 @@
   <artifactId>sahagin-groovy</artifactId>
   <packaging>jar</packaging>
   <name>Sahagin Groovy</name>
-  <description>This is Sahagin Groovy internal module.</description>
+  <description>Sahagin Groovy implementation.</description>
   
   <dependencies>
     <dependency>
