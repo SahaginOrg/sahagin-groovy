@@ -186,8 +186,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
 
         // Some fields are defined dynamically (such as Geb page object contents).
-        // These field does not have any FieldeNode,
-        // but these information is set on TestField memo.
+        // These field may not have any FieldeNode information.
         // TODO should search TestField for super class or delegated class?
         String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(classNode, fieldName)
         TestField fieldDynamic = fieldTable.getByKey(fieldKey)
