@@ -34,7 +34,9 @@ import org.sahagin.share.srctree.code.UnknownCode
 
 // This visitor collects all page contents and set them to fieldTable
 class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
-
+    // pair of field key and its value type ClassNode
+    private Map<String, ClassNode> fieldValueClassMap = new HashMap<String, ClassNode>(128)
+    
     // Searches static content initialization block from the specific static initializer method node.
     // Returns null if not found
     private BlockStatement getContentClosureBlock(MethodNode method) {
@@ -171,13 +173,12 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             ClassNode fieldValueClass
             (fieldValueCode, fieldValueClass) =
             visitor.generateExpressionCode(fieldValue, method)
-            // TODO maybe memo concept can be used in many place
-            fieldValueCode.rawASTTypeMemo = fieldValueClass
             testField.value = fieldValueCode
+            fieldValueClassMap[testField.key] = fieldValueClass
         }
         return true
     }
-
+    
     // field value is not set by this method
     @Override
     boolean collectSubMethod(MethodNode method, MethodType type, CollectSubVisitor visitor) {
@@ -267,18 +268,19 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         TestField testField
         FieldNode fieldNode
         (testField, fieldNode) = visitor.getThisOrSuperTestField(fieldOwnerType, fieldName)
-        if (fieldNode == null &&
-        testField != null &&
-        testField.value != null &&
-        testField.value.rawASTTypeMemo != null) {
-            Field field = new Field()
-            field.fieldKey = testField.key
-            field.field = testField
-            field.thisInstance = receiverCode
-            field.original = original
-            return [field, testField.value.rawASTTypeMemo]
+        // If fieldNode is found, do nothing and use it.
+        // If fieldNode is not found and fieldValueClass is found, use it
+        if (fieldNode == null && testField != null) {
+            ClassNode fieldValueClass = fieldValueClassMap[testField.key]
+            if (fieldValueClass != null) {
+                Field field = new Field()
+                field.fieldKey = testField.key
+                field.field = testField
+                field.thisInstance = receiverCode
+                field.original = original
+                return [field, fieldValueClass]
+            }
         }
-
         return [null, null]
     }
 
