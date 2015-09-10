@@ -1,6 +1,7 @@
 package org.sahagin.groovy.runlib.external.adapter
 
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
@@ -62,6 +63,12 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     List<CodeLine> collectMethodStatementCode(Statement statement,
             MethodNode method, MethodType methodType, CollectCodeVisitor visitor) {
         return new ArrayList<CodeLine>(0)
+    }
+
+    @Override
+    def beforeGenerateVarAssignCode(BinaryExpression binary,
+            MethodNode parentMethod, CollectCodeVisitor visitor) {
+        return [null, null]
     }
 
     @Override

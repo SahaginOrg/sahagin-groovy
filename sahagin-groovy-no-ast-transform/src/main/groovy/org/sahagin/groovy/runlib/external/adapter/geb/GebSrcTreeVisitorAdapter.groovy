@@ -22,6 +22,7 @@ import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
 import org.sahagin.groovy.runlib.srctreegen.SrcTreeGeneratorUtils
 import org.sahagin.groovy.share.GroovyASTUtils
+import org.sahagin.share.srctree.PageClass
 import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
@@ -239,6 +240,24 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         }
 
         return true
+    }
+    
+    @Override
+    def beforeGenerateVarAssignCode(BinaryExpression binary,
+            MethodNode parentMethod, CollectCodeVisitor visitor) {
+        Code leftCode
+        ClassNode leftClass
+        (leftCode, leftClass) = visitor.generateSetterExpressionCode(binary.leftExpression, parentMethod)
+
+        String classKey = GroovyASTUtils.getClassQualifiedName(leftClass)
+        TestClass subClass = visitor.subClassTable.getByKey(classKey)
+        if ((subClass != null && subClass instanceof PageClass) ||
+        GroovyASTUtils.inheritsFromClass(leftClass, "geb.Page")) {
+            // ignore left for page type variable assignment
+            // since usually page type variable is not used in other TestDoc
+            return  visitor.generateExpressionCode(binary.rightExpression, parentMethod)
+        }
+        return [null, null]
     }
 
 }

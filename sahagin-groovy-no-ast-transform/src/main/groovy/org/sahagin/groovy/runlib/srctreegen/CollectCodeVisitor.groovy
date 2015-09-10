@@ -390,28 +390,26 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     // returns [Code, ClassNode]
     def generateVarAssignCode(BinaryExpression binary, MethodNode parentMethod) {
-        Expression left = binary.leftExpression
-        Expression right = binary.rightExpression
-        String original = binary.text
-        Code rightCode
-        ClassNode rightClass
-        (rightCode, rightClass) = generateExpressionCode(right, parentMethod)
-        Code leftCode
-        ClassNode leftClass
-        (leftCode, leftClass) = generateSetterExpressionCode(left, parentMethod)
-
-        String classKey = GroovyASTUtils.getClassQualifiedName(leftClass)
-        TestClass subClass = subClassTable.getByKey(classKey)
-        // TODO geb specific logic
-        if ((subClass != null && subClass instanceof PageClass) ||
-        GroovyASTUtils.inheritsFromClass(leftClass, "geb.Page")) {
-            // ignore left for page type variable assignment
-            // since usually page type variable is not used in other TestDoc
-            return [rightCode, rightClass]
+        List<SrcTreeVisitorAdapter> listeners =
+                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            Code code
+            ClassNode codeClass
+            (code, codeClass) = listener.beforeGenerateVarAssignCode(binary, parentMethod, this)
+            if (code != null) {
+                return [code, codeClass]
+            }
         }
 
+        Code rightCode
+        ClassNode rightClass
+        (rightCode, rightClass) = generateExpressionCode(binary.rightExpression, parentMethod)
+        Code leftCode
+        ClassNode leftClass
+        (leftCode, leftClass) = generateSetterExpressionCode(binary.leftExpression, parentMethod)
+
         VarAssign assign = new VarAssign()
-        assign.original = original
+        assign.original = binary.text
         assign.variable = leftCode
         assign.value = rightCode
         return [assign, ClassHelper.VOID_TYPE]
@@ -637,6 +635,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
     }
     
+    // returns [Code, ClassNode]
     def generateSetterExpressionCode(Expression expression, MethodNode parentMethod) {
         if (expression instanceof PropertyExpression) {
             PropertyExpression property = expression as PropertyExpression

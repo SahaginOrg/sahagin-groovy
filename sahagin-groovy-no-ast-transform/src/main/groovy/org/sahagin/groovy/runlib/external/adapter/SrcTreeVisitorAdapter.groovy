@@ -1,6 +1,7 @@
 package org.sahagin.groovy.runlib.external.adapter
 
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectRootVisitor
@@ -55,10 +56,16 @@ interface SrcTreeVisitorAdapter {
     // If returns true, the subsequent visitor or visitor listener logics for this statement are skipped
     boolean collectCode(MethodNode method, MethodType methodType, CollectCodeVisitor visitor)
 
-    // Called while CollectCodeVisitor visits a method body statement.
+    // Called while CollectCodeVisitor visits each statement for a method body.
     // If not empty list is returned, the subsequent visitor or visitor listener logics are skipped
     List<CodeLine> collectMethodStatementCode(Statement statement, MethodNode method,
         MethodType methodType, CollectCodeVisitor visitor)
+    
+    // Called before CollectCodeVisitor generates VarAssign code.
+    // This method returns the pair of [Code, ClassNode], and if Code is not null,
+    // the subsequent visitor or visitor listener logics are skipped
+    def beforeGenerateVarAssignCode(BinaryExpression binary, 
+        MethodNode parentMethod, CollectCodeVisitor visitor)
 
     // Called after all CollectCodeVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
