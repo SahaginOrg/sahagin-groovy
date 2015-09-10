@@ -55,25 +55,31 @@ interface SrcTreeVisitorAdapter {
     boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor)
 
     // Called while CollectCodeVisitor visits a method.
-    // If returns true, the subsequent visitor or visitor listener logics for this statement are skipped
+    // If returns true, the subsequent visitor or visitor listener logics for this method are skipped
     boolean collectCode(MethodNode method, MethodType methodType, CollectCodeVisitor visitor)
 
     // Called while CollectCodeVisitor visits each statement for a method body.
-    // If not empty list is returned, the subsequent visitor or visitor listener logics are skipped
+    // If not empty list is returned, the subsequent visitor or visitor listener logics 
+    // for this statement are skipped
     List<CodeLine> collectMethodStatementCode(Statement statement, MethodNode method,
         MethodType methodType, CollectCodeVisitor visitor)
     
-    // Called before CollectCodeVisitor generates VarAssign code.
+    // Called while CollectCodeVisitor generates VarAssign code.
     // This method returns the pair of [Code, ClassNode], and if Code is not null,
-    // the subsequent visitor or visitor listener logics are skipped
-    def beforeGenerateVarAssignCode(BinaryExpression binary, 
+    // the subsequent visitor or visitor listener logics for this expression are skipped
+    def generateVarAssignCode(BinaryExpression binary, 
         MethodNode parentMethod, CollectCodeVisitor visitor)
     
-    // Called before CollectCodeVisitor generates Field code.
+    // Called while CollectCodeVisitor generates Field code.
     // This method returns the pair of [Code, ClassNode], and if Code is not null,
-    // the subsequent visitor or visitor listener logics are skipped
-    def beforeGenerateFieldCode(String fieldName, ClassNode fieldOwnerType, 
+    // the subsequent visitor or visitor listener logics for this field are skipped
+    def generateFieldCode(String fieldName, ClassNode fieldOwnerType, 
         Code receiverCode, String original, CollectCodeVisitor visitor)
+    
+    // Called while CollectCodeVisitor searches ClassNode to which the specified classNode delegates.
+    // If returned ClassNode is not null, the subsequent visitor or visitor listener logics 
+    // for this classNode are skipped
+    ClassNode getDelegateToClassNode(ClassNode classNode)
 
     // Called after all CollectCodeVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped

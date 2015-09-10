@@ -79,7 +79,6 @@ class GebAdapter implements Adapter {
             classAdd("geb.junit4.GebTest", "geb.Browser")
             classAdd("geb.spock.GebSpec", "geb.Browser")
             classAdd("geb.testng.GebTest", "geb.Browser")
-            classAdd("geb.Browser", "geb.Page")
         }
 
         @Override

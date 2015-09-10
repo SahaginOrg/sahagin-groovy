@@ -113,6 +113,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getDelegateToClassNode(ClassNode classNode) {
+        List<SrcTreeVisitorAdapter> listeners =
+                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            ClassNode delegateToClass = listener.getDelegateToClassNode(classNode)
+            if (delegateToClass != null) {
+                return delegateToClass
+            }
+        }
+        
         TestClass testClass = SrcTreeGeneratorUtils.getTestClass(
                 GroovyASTUtils.getClassQualifiedName(classNode), rootClassTable, subClassTable)
         if (testClass == null) {
@@ -395,7 +404,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         for (SrcTreeVisitorAdapter listener : listeners) {
             Code code
             ClassNode codeClass
-            (code, codeClass) = listener.beforeGenerateVarAssignCode(binary, parentMethod, this)
+            (code, codeClass) = listener.generateVarAssignCode(binary, parentMethod, this)
             if (code != null) {
                 return [code, codeClass]
             }
@@ -425,7 +434,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         for (SrcTreeVisitorAdapter listener : listeners) {
             Code code
             ClassNode codeClass
-            (code, codeClass) = listener.beforeGenerateFieldCode(
+            (code, codeClass) = listener.generateFieldCode(
                 fieldName, fieldOwnerType, receiverCode, original, this)
             if (code != null) {
                 return [code, codeClass]

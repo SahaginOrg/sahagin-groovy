@@ -68,15 +68,20 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     }
 
     @Override
-    def beforeGenerateVarAssignCode(BinaryExpression binary,
+    def generateVarAssignCode(BinaryExpression binary,
             MethodNode parentMethod, CollectCodeVisitor visitor) {
         return [null, null]
     }
 
     @Override
-    def beforeGenerateFieldCode(String fieldName, ClassNode fieldOwnerType,
+    def generateFieldCode(String fieldName, ClassNode fieldOwnerType,
         Code receiverCode, String original, CollectCodeVisitor visitor) {
         return [null, null]
+    }
+
+    @Override
+    ClassNode getDelegateToClassNode(ClassNode classNode) {
+        return null
     }
 
     @Override

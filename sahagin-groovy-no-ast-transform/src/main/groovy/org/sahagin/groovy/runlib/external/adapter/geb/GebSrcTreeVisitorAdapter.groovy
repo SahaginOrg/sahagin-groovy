@@ -1,5 +1,6 @@
 package org.sahagin.groovy.runlib.external.adapter.geb
 
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
@@ -36,6 +37,7 @@ import org.sahagin.share.srctree.code.UnknownCode
 class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     // pair of field key and its value type ClassNode
     private Map<String, ClassNode> fieldValueClassMap = new HashMap<String, ClassNode>(128)
+    private ClassNode currentPage = null
     
     // Searches static content initialization block from the specific static initializer method node.
     // Returns null if not found
@@ -245,7 +247,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     }
     
     @Override
-    def beforeGenerateVarAssignCode(BinaryExpression binary,
+    def generateVarAssignCode(BinaryExpression binary,
             MethodNode parentMethod, CollectCodeVisitor visitor) {
         Code leftCode
         ClassNode leftClass
@@ -263,7 +265,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     }
 
     @Override
-    def beforeGenerateFieldCode(String fieldName, ClassNode fieldOwnerType,
+    def generateFieldCode(String fieldName, ClassNode fieldOwnerType,
             Code receiverCode, String original, CollectCodeVisitor visitor) {
         TestField testField
         FieldNode fieldNode
@@ -282,6 +284,19 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             }
         }
         return [null, null]
+    }
+
+    @Override
+    ClassNode getDelegateToClassNode(ClassNode classNode) {
+        if (classNode.name == "geb.Browser") {
+            if (currentPage == null) {
+                return ClassHelper.make(Class.forName("geb.Page"))
+            } else {
+                return currentPage
+            }
+        } else {
+            return null
+        }
     }
 
 }
