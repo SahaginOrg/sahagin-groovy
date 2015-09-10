@@ -3,6 +3,7 @@ package org.sahagin.groovy.runlib.external.adapter
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectRootVisitor
@@ -29,7 +30,7 @@ interface SrcTreeVisitorAdapter {
     // Called before all CollectRootVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped
     boolean beforeCollectRootMethod(MethodNode method, CollectRootVisitor visitor)
-
+   
     // Called while CollectRootVisitor visits a method.
     // If returns true, the subsequent visitor or visitor listener logics for this method are skipped
     boolean collectRootMethod(MethodNode method, MethodType methodType, CollectRootVisitor visitor)
@@ -64,6 +65,17 @@ interface SrcTreeVisitorAdapter {
     List<CodeLine> collectMethodStatementCode(Statement statement, MethodNode method,
         MethodType methodType, CollectCodeVisitor visitor)
     
+    // Called while CollectCodeVisitor generates SubMethodInvoke code.
+    // This method returns the pair of [Code, ClassNode], and if Code is not null,
+    // the subsequent visitor or visitor listener logics for this expression are skipped
+    def generateMethodInvokeCode(MethodCall methodCall, 
+        MethodNode parentMethod, CollectCodeVisitor visitor)
+    
+    // Called after CollectCodeVisitor has generated MethodInvoke code.
+    // If returns true, the subsequent visitor or visitor listener logics 
+    // for this MethodInvoke are skipped
+    boolean generatedMethodInvokeCode(Code code, ClassNode classNode)
+    
     // Called while CollectCodeVisitor generates VarAssign code.
     // This method returns the pair of [Code, ClassNode], and if Code is not null,
     // the subsequent visitor or visitor listener logics for this expression are skipped
@@ -79,7 +91,7 @@ interface SrcTreeVisitorAdapter {
     // Called while CollectCodeVisitor searches ClassNode to which the specified classNode delegates.
     // If returned ClassNode is not null, the subsequent visitor or visitor listener logics 
     // for this classNode are skipped
-    ClassNode getDelegateToClassNode(ClassNode classNode)
+    ClassNode getDelegateToClassNode(ClassNode classNode, CollectCodeVisitor visitor)
 
     // Called after all CollectCodeVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped

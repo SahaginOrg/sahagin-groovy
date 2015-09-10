@@ -3,6 +3,7 @@ package org.sahagin.groovy.runlib.external.adapter
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodType
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
@@ -68,6 +69,17 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     }
 
     @Override
+    def generateMethodInvokeCode(MethodCall methodCall, 
+            MethodNode parentMethod, CollectCodeVisitor visitor) {
+        return [null, null]
+    }
+
+    @Override
+    boolean generatedMethodInvokeCode(Code code, ClassNode classNode) {
+        return false
+    }
+    
+    @Override
     def generateVarAssignCode(BinaryExpression binary,
             MethodNode parentMethod, CollectCodeVisitor visitor) {
         return [null, null]
@@ -80,7 +92,7 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     }
 
     @Override
-    ClassNode getDelegateToClassNode(ClassNode classNode) {
+    ClassNode getDelegateToClassNode(ClassNode classNode, CollectCodeVisitor visitor) {
         return null
     }
 

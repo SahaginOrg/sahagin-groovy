@@ -1,5 +1,8 @@
 package org.sahagin.groovy.runlib.external.adapter.geb
 
+import java.util.List;
+
+import org.sahagin.share.srctree.code.CodeLine;
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
@@ -12,6 +15,7 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.FieldExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
@@ -28,9 +32,12 @@ import org.sahagin.share.srctree.TestClass
 import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestField
 import org.sahagin.share.srctree.TestFieldTable
+import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
+import org.sahagin.share.srctree.code.ClassInstance
 import org.sahagin.share.srctree.code.Code
 import org.sahagin.share.srctree.code.Field
+import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.sahagin.share.srctree.code.UnknownCode
 
 // This visitor collects all page contents and set them to fieldTable
@@ -138,7 +145,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         return [null, null]
     }
 
-    // collect all page object content values and types before collecting other codes
+    // collect all page object content values and types,
+    // and set them to fieldValueClassMap before collecting other codes
     @Override
     boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor) {
         BlockStatement contentClosureBlock = getContentClosureBlock(method)
@@ -246,6 +254,42 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         return true
     }
     
+    // get current page from at, to, via method argument
+    @Override
+    boolean generatedMethodInvokeCode(Code code, ClassNode classNode) {
+        if (!(code instanceof SubMethodInvoke)) {
+            return false
+        }
+        SubMethodInvoke invoke = (SubMethodInvoke) code
+        TestMethod subMethod = invoke.subMethod
+        if (subMethod.qualifiedName == "Geb.Browser.at" ||
+            subMethod.qualifiedName == "Geb.Browser.to" ||
+            subMethod.qualifiedName == "Geb.Browser.via") {
+            if (invoke.args.size() == 0) {
+                return false
+            }            
+            for (Code arg : invoke.args) {
+                if (!(arg instanceof ClassInstance)) {
+                    continue
+                }
+                Class<?> argClass = null
+                try {
+                    argClass = Class.forName(((ClassInstance) arg).testClass.qualifiedName)
+                } catch (ClassNotFoundException e) {
+                    continue
+                }
+                ClassNode argClassNode = ClassHelper.make(argClass)
+                if (!GroovyASTUtils.inheritsFromClass(argClassNode, "geb.Page")) {
+                    continue
+                }
+                currentPage = argClassNode
+                return false
+            }
+            return false
+        }
+    }
+    
+    // ignore left for page type variable assignment
     @Override
     def generateVarAssignCode(BinaryExpression binary,
             MethodNode parentMethod, CollectCodeVisitor visitor) {
@@ -264,6 +308,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         return [null, null]
     }
 
+    // search field from fieldValueClassMap
     @Override
     def generateFieldCode(String fieldName, ClassNode fieldOwnerType,
             Code receiverCode, String original, CollectCodeVisitor visitor) {
@@ -286,8 +331,9 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         return [null, null]
     }
 
+    // handle current pgae delegation
     @Override
-    ClassNode getDelegateToClassNode(ClassNode classNode) {
+    ClassNode getDelegateToClassNode(ClassNode classNode, CollectCodeVisitor visitor) {
         if (classNode.name == "geb.Browser") {
             if (currentPage == null) {
                 return ClassHelper.make(Class.forName("geb.Page"))

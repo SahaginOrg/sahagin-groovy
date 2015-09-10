@@ -64,6 +64,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
     private CollectPhase phase
+    private List<SrcTreeVisitorAdapter> listeners
 
     CollectCodeVisitor(SourceUnit srcUnit,
     TestClassTable rootClassTable, TestClassTable subClassTable,
@@ -77,6 +78,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         this.fieldTable = fieldTable
         this.utils = utils
         this.phase = phase
+        
+        listeners = GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
     }
 
     SourceUnit getSrcUnit() {
@@ -113,10 +116,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getDelegateToClassNode(ClassNode classNode) {
-        List<SrcTreeVisitorAdapter> listeners =
-                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         for (SrcTreeVisitorAdapter listener : listeners) {
-            ClassNode delegateToClass = listener.getDelegateToClassNode(classNode)
+            ClassNode delegateToClass = listener.getDelegateToClassNode(classNode, this)
             if (delegateToClass != null) {
                 return delegateToClass
             }
@@ -331,7 +332,16 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     // return [Code, ClassNode]
-    def generateMethodInvokeCode(MethodCall methodCall, MethodNode parentMethod) {
+    private def generateMethodInvokeCodeSub(MethodCall methodCall, MethodNode parentMethod) {
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            Code code
+            ClassNode codeClass
+            (code, codeClass) = listener.generateMethodInvokeCode(methodCall, parentMethod, this)
+            if (code != null) {
+                return [code, codeClass]
+            }
+        }
+
         ASTNode receiver = methodCall.receiver
         String methodAsString = methodCall.methodAsString
         Expression arguments = methodCall.arguments
@@ -396,11 +406,22 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         subMethodInvoke.original = original
         return [subMethodInvoke, invocationMethodNode.returnType]
     }
+    
+    // return [Code, ClassNode]
+    def generateMethodInvokeCode(MethodCall methodCall, MethodNode parentMethod) {
+        Code code
+        ClassNode codeClass
+        (code, codeClass) = generateMethodInvokeCodeSub(methodCall, parentMethod)
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            if (listener.generatedMethodInvokeCode(code, codeClass)) {
+                break;
+            }
+        }
+        return [code, codeClass]
+    }
 
     // returns [Code, ClassNode]
     def generateVarAssignCode(BinaryExpression binary, MethodNode parentMethod) {
-        List<SrcTreeVisitorAdapter> listeners =
-                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         for (SrcTreeVisitorAdapter listener : listeners) {
             Code code
             ClassNode codeClass
@@ -429,8 +450,6 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns [Code, ClassNode]
     private def generateFieldCode(String fieldName, ClassNode fieldOwnerType,
             Code receiverCode, String original, ClassNode compilerCalcedFieldType, boolean isSetter) {
-        List<SrcTreeVisitorAdapter> listeners =
-                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         for (SrcTreeVisitorAdapter listener : listeners) {
             Code code
             ClassNode codeClass
@@ -722,8 +741,6 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     void visitMethod(MethodNode node) {
-        List<SrcTreeVisitorAdapter> listeners =
-                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
         if (phase == CollectPhase.BEFORE) {
             for (SrcTreeVisitorAdapter listener : listeners) {
                 if (listener.beforeCollectCode(node, this)) {
