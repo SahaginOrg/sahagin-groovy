@@ -1,11 +1,13 @@
 package org.sahagin.groovy.runlib.external.adapter
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.stmt.Statement
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectRootVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
+import org.sahagin.share.srctree.code.Code;
 import org.sahagin.share.srctree.code.CodeLine
 
 interface SrcTreeVisitorAdapter {
@@ -66,6 +68,12 @@ interface SrcTreeVisitorAdapter {
     // the subsequent visitor or visitor listener logics are skipped
     def beforeGenerateVarAssignCode(BinaryExpression binary, 
         MethodNode parentMethod, CollectCodeVisitor visitor)
+    
+    // Called before CollectCodeVisitor generates Field code.
+    // This method returns the pair of [Code, ClassNode], and if Code is not null,
+    // the subsequent visitor or visitor listener logics are skipped
+    def beforeGenerateFieldCode(String fieldName, ClassNode fieldOwnerType, 
+        Code receiverCode, String original, CollectCodeVisitor visitor)
 
     // Called after all CollectCodeVisitor method visits.
     // If returns true, the subsequent visitor listener logics are skipped

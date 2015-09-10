@@ -29,6 +29,7 @@ import org.sahagin.share.srctree.TestField
 import org.sahagin.share.srctree.TestFieldTable
 import org.sahagin.share.srctree.TestMethodTable
 import org.sahagin.share.srctree.code.Code
+import org.sahagin.share.srctree.code.Field
 import org.sahagin.share.srctree.code.UnknownCode
 
 // This visitor collects all page contents and set them to fieldTable
@@ -257,6 +258,27 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             // since usually page type variable is not used in other TestDoc
             return  visitor.generateExpressionCode(binary.rightExpression, parentMethod)
         }
+        return [null, null]
+    }
+
+    @Override
+    def beforeGenerateFieldCode(String fieldName, ClassNode fieldOwnerType,
+            Code receiverCode, String original, CollectCodeVisitor visitor) {
+        TestField testField
+        FieldNode fieldNode
+        (testField, fieldNode) = visitor.getThisOrSuperTestField(fieldOwnerType, fieldName)
+        if (fieldNode == null &&
+        testField != null &&
+        testField.value != null &&
+        testField.value.rawASTTypeMemo != null) {
+            Field field = new Field()
+            field.fieldKey = testField.key
+            field.field = testField
+            field.thisInstance = receiverCode
+            field.original = original
+            return [field, testField.value.rawASTTypeMemo]
+        }
+
         return [null, null]
     }
 

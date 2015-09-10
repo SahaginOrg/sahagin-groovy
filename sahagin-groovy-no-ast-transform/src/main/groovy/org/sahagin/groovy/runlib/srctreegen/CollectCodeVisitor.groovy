@@ -154,8 +154,9 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         return [testField, fieldNode]
     }
 
-    // returns [TestField, FieldNode]
-    private def getThisOrSuperTestField(ClassNode classNode, String fieldName) {
+    // search field for the specified fieldName from the classNode or it super class
+    // - returns [TestField, FieldNode]
+    def getThisOrSuperTestField(ClassNode classNode, String fieldName) {
         // check this class and super class
         TestField field
         FieldNode fieldNode
@@ -420,16 +421,24 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // returns [Code, ClassNode]
     private def generateFieldCode(String fieldName, ClassNode fieldOwnerType,
             Code receiverCode, String original, ClassNode compilerCalcedFieldType, boolean isSetter) {
+        List<SrcTreeVisitorAdapter> listeners =
+                GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
+        for (SrcTreeVisitorAdapter listener : listeners) {
+            Code code
+            ClassNode codeClass
+            (code, codeClass) = listener.beforeGenerateFieldCode(
+                fieldName, fieldOwnerType, receiverCode, original, this)
+            if (code != null) {
+                return [code, codeClass]
+            }
+        }
+
         TestField testField
         FieldNode fieldNode
         (testField, fieldNode) = getThisOrSuperTestField(fieldOwnerType, fieldName)
         ClassNode fieldType
         if (fieldNode != null) {
             fieldType = fieldNode.getType()
-        } else if (testField != null && testField.value != null &&
-        testField.value.rawASTTypeMemo != null) {
-            // TODO maybe memo concept can be used in many place
-            fieldType = testField.value.rawASTTypeMemo
         } else if (!isSetter) {
             // TODO setter check if isSetter flag is true
             // Groovy automatically generate field from getter method

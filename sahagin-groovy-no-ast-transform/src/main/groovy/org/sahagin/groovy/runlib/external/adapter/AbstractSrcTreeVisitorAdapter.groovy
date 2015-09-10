@@ -1,5 +1,6 @@
 package org.sahagin.groovy.runlib.external.adapter
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.stmt.Statement
@@ -7,6 +8,7 @@ import org.sahagin.groovy.runlib.external.adapter.SrcTreeVisitorAdapter.MethodTy
 import org.sahagin.groovy.runlib.srctreegen.CollectCodeVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectRootVisitor
 import org.sahagin.groovy.runlib.srctreegen.CollectSubVisitor
+import org.sahagin.share.srctree.code.Code;
 import org.sahagin.share.srctree.code.CodeLine
 
 class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
@@ -68,6 +70,12 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     @Override
     def beforeGenerateVarAssignCode(BinaryExpression binary,
             MethodNode parentMethod, CollectCodeVisitor visitor) {
+        return [null, null]
+    }
+
+    @Override
+    def beforeGenerateFieldCode(String fieldName, ClassNode fieldOwnerType,
+        Code receiverCode, String original, CollectCodeVisitor visitor) {
         return [null, null]
     }
 
