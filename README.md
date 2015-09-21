@@ -2,7 +2,8 @@
 
 Sahagin-Groovy is Groovy implementation for [Sahagin](https://github.com/SahaginOrg/sahagin-java), which provides highly readable HTML test script viewer and test result report.
 
-(TODO) image
+
+<img src="https://github.com/SahaginOrg/sahagin-groovy/blob/master/wiki-images/SahaginReport.jpg" height="350px" />
 
 Sahagin-Groovy supports Geb, Spock, JUnit4, and can easily generate their result reports.
 
