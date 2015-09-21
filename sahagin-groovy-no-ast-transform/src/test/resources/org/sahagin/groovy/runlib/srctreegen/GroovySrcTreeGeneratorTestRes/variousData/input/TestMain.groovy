@@ -22,13 +22,13 @@ class TestMain extends GebTest {
     void 宿泊予約が成功すること() {
         // 予約情報入力ページ
         ReserveInputPage page = to ReserveInputPage
-        page.setReserveDate("2015", "5", "30")
+        setReserveDate("2015", "5", "30")
         page.reserveTerm = "1"
-        page.headCount = "2"
-        page.breakfast = "on"
-        page.earlyCheckInPlan = true
-        page.guestName = "サンプルユーザー"
-        page.goNextButton.click()
+        headCount = "2"
+        breakfast = "on"
+        earlyCheckInPlan = true
+        guestName = "サンプルユーザー"
+        goNextButton.click()
     }
 
     @Test

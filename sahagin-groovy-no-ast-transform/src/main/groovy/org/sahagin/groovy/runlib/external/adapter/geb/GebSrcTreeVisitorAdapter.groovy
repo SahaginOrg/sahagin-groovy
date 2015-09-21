@@ -256,15 +256,15 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     
     // get current page from at, to, via method argument
     @Override
-    boolean generatedMethodInvokeCode(Code code, ClassNode classNode) {
+    boolean generatedMethodInvokeCode(Code code, ClassNode classNode, CollectCodeVisitor visitor) {
         if (!(code instanceof SubMethodInvoke)) {
             return false
         }
         SubMethodInvoke invoke = (SubMethodInvoke) code
         TestMethod subMethod = invoke.subMethod
-        if (subMethod.qualifiedName == "Geb.Browser.at" ||
-            subMethod.qualifiedName == "Geb.Browser.to" ||
-            subMethod.qualifiedName == "Geb.Browser.via") {
+        if (subMethod.qualifiedName == "geb.Browser.at" ||
+            subMethod.qualifiedName == "geb.Browser.to" ||
+            subMethod.qualifiedName == "geb.Browser.via") {
             if (invoke.args.size() == 0) {
                 return false
             }            
@@ -272,13 +272,19 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
                 if (!(arg instanceof ClassInstance)) {
                     continue
                 }
-                Class<?> argClass = null
-                try {
-                    argClass = Class.forName(((ClassInstance) arg).testClass.qualifiedName)
-                } catch (ClassNotFoundException e) {
-                    continue
+                // if argument class is page class, it must exist in targetWholeSrcUnits 
+                // or must have been loaded by class loader
+                String argClassQualifiedName = ((ClassInstance) arg).testClass.qualifiedName 
+                ClassNode argClassNode = SrcTreeGeneratorUtils.searchClassNode(
+                        visitor.targetWholeSrcUnits, argClassQualifiedName)
+                if (argClassNode == null) {
+                    try {
+                        argClassNode = ClassHelper.make(Class.forName(
+                                argClassQualifiedName, true, visitor.srcUnit.classLoader))
+                    } catch (ClassNotFoundException e) {
+                        continue
+                    }
                 }
-                ClassNode argClassNode = ClassHelper.make(argClass)
                 if (!GroovyASTUtils.inheritsFromClass(argClassNode, "geb.Page")) {
                     continue
                 }
@@ -336,7 +342,8 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     ClassNode getDelegateToClassNode(ClassNode classNode, CollectCodeVisitor visitor) {
         if (classNode.name == "geb.Browser") {
             if (currentPage == null) {
-                return ClassHelper.make(Class.forName("geb.Page"))
+                // must use the class loader used in srcUnit
+                return ClassHelper.make(Class.forName("geb.Page", true, visitor.srcUnit.classLoader))
             } else {
                 return currentPage
             }

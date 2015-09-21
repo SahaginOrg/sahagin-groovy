@@ -4,7 +4,7 @@
 # root directory of test code and related libraries
 groovy:
   testDir: ../../../../../../resources/org/sahagin/groovy/runlib/srctreegen/GroovySrcTreeGeneratorTestRes/variousData/input
-#  testFramework: jUnit4
+  # testFramework: jUnit4
 
 common:
   userLocale: ja-JP

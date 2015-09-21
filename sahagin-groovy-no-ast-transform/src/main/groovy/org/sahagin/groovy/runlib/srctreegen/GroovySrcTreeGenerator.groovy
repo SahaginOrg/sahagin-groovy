@@ -3,6 +3,7 @@ package org.sahagin.groovy.runlib.srctreegen
 import java.util.regex.Pattern
 
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils;
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -36,7 +37,13 @@ class GroovySrcTreeGenerator {
         for (String classPath : classPathEntries) {
             groovyLoader.addClasspath(classPath)
         }
-
+        for (String srcFile : srcFiles) {
+            File parentDir = new File(srcFile).parentFile
+            if (parentDir != null) {
+                groovyLoader.addClasspath(parentDir.absolutePath)
+            }
+        }
+        
         CompilerConfiguration compilerConf = new CompilerConfiguration()
         // disable geb, spock, sahagin-groovy itself AST transformations since they makes AST parsing difficult
         // TODO geb and spock specific logic
@@ -116,7 +123,7 @@ class GroovySrcTreeGenerator {
             CollectCodeVisitor beforeCodeVisitor = new CollectCodeVisitor(
                     src, subVisitor.rootClassTable, subVisitor.subClassTable,
                     rootVisitor.rootMethodTable, subVisitor.subMethodTable,
-                    subVisitor.fieldTable, utils, CollectPhase.BEFORE)
+                    subVisitor.fieldTable, utils, sources, CollectPhase.BEFORE)
             for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(beforeCodeVisitor)
             }
@@ -125,7 +132,7 @@ class GroovySrcTreeGenerator {
             CollectCodeVisitor codeVisitor = new CollectCodeVisitor(
                     src, subVisitor.rootClassTable, subVisitor.subClassTable,
                     rootVisitor.rootMethodTable, subVisitor.subMethodTable,
-                    subVisitor.fieldTable, utils, CollectPhase.WHILE)
+                    subVisitor.fieldTable, utils, sources, CollectPhase.WHILE)
             for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(codeVisitor)
             }
@@ -134,7 +141,7 @@ class GroovySrcTreeGenerator {
             CollectCodeVisitor afterCodeVisitor = new CollectCodeVisitor(
                     src, subVisitor.rootClassTable, subVisitor.subClassTable,
                     rootVisitor.rootMethodTable, subVisitor.subMethodTable,
-                    subVisitor.fieldTable, utils, CollectPhase.AFTER)
+                    subVisitor.fieldTable, utils, sources, CollectPhase.AFTER)
             for (ClassNode classNode : src.AST.classes) {
                 classNode.visitContents(afterCodeVisitor)
             }

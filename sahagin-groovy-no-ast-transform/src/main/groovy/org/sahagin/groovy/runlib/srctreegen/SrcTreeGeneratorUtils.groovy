@@ -10,6 +10,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.control.SourceUnit
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.groovy.share.GroovyASTUtils
@@ -352,5 +353,16 @@ class SrcTreeGeneratorUtils {
         testClass.testDoc = testDoc
         return testClass
     }
-
+    
+    // returns null if not found
+    static ClassNode searchClassNode(Collection<SourceUnit> sources, String classQualifiedName) {
+        for (SourceUnit src : sources) {
+            for (ClassNode classNode : src.AST.classes) {
+               if (classNode.name == classQualifiedName) {
+                   return classNode
+               }
+            }
+        }
+        return null
+    }
 }

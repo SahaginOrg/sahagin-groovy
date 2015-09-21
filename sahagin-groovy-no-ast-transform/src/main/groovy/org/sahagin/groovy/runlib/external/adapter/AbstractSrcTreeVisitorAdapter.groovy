@@ -75,7 +75,7 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     }
 
     @Override
-    boolean generatedMethodInvokeCode(Code code, ClassNode classNode) {
+    boolean generatedMethodInvokeCode(Code code, ClassNode classNode, CollectCodeVisitor visitor) {
         return false
     }
     

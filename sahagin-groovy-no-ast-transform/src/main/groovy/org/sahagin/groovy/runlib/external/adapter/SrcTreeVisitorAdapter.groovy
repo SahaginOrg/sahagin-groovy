@@ -74,7 +74,7 @@ interface SrcTreeVisitorAdapter {
     // Called after CollectCodeVisitor has generated MethodInvoke code.
     // If returns true, the subsequent visitor or visitor listener logics 
     // for this MethodInvoke are skipped
-    boolean generatedMethodInvokeCode(Code code, ClassNode classNode)
+    boolean generatedMethodInvokeCode(Code code, ClassNode classNode, CollectCodeVisitor visitor)
     
     // Called while CollectCodeVisitor generates VarAssign code.
     // This method returns the pair of [Code, ClassNode], and if Code is not null,

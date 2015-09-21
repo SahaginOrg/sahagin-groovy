@@ -63,13 +63,15 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     private TestFieldTable fieldTable
     private SrcTreeGeneratorUtils utils
     private SourceUnit srcUnit
+    private Collection<SourceUnit> targetWholeSrcUnits
     private CollectPhase phase
     private List<SrcTreeVisitorAdapter> listeners
 
     CollectCodeVisitor(SourceUnit srcUnit,
     TestClassTable rootClassTable, TestClassTable subClassTable,
     TestMethodTable rootMethodTable, TestMethodTable subMethodTable,
-    TestFieldTable fieldTable, SrcTreeGeneratorUtils utils, CollectPhase phase) {
+    TestFieldTable fieldTable, SrcTreeGeneratorUtils utils, 
+    Collection<SourceUnit> targetWholeSrcUnits, CollectPhase phase) {
         this.srcUnit = srcUnit
         this.rootClassTable = rootClassTable
         this.subClassTable = subClassTable
@@ -77,6 +79,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         this.subMethodTable = subMethodTable
         this.fieldTable = fieldTable
         this.utils = utils
+        this.targetWholeSrcUnits = targetWholeSrcUnits
         this.phase = phase
         
         listeners = GroovyAdapterContainer.globalInstance().srcTreeVisitorAdapters
@@ -109,9 +112,14 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     SrcTreeGeneratorUtils getUtils() {
         return utils
     }
+    
+    Collection<SourceUnit> getTargetWholeSrcUnits() {
+        return targetWholeSrcUnits
+    }
 
     @Override
     protected SourceUnit getSourceUnit() {
+        // TODO should return srcUnit??
         return null // dummy
     }
 
@@ -131,14 +139,21 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         if (testClass.delegateToTestClass == null) {
             return null
         }
-        String delegateToClassQualifiedName = testClass.delegateToTestClass.qualifiedName
-        Class<?> delegateToClass = null
+        String delegateToClassQualifiedName = testClass.delegateToTestClass.qualifiedName        
+        // if delegateToClass exists, it must exist in targetWholeSrcUnits
+        // or must have been loaded by class loader
+        ClassNode delegateToClassNode = SrcTreeGeneratorUtils.searchClassNode(
+                targetWholeSrcUnits, delegateToClassQualifiedName)
+        if (delegateToClassNode != null) {
+            return delegateToClassNode
+        }
+
         try {
-            delegateToClass = Class.forName(delegateToClassQualifiedName)
+            return ClassHelper.make(Class.forName(
+                    delegateToClassQualifiedName, true, srcUnit.classLoader))
         } catch (ClassNotFoundException e) {
             return null
         }
-        return ClassHelper.make(delegateToClass)
     }
 
     private static FieldNode getThisOrSuperFieldNode(ClassNode classNode, String fieldName) {
@@ -163,6 +178,27 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         TestField testField = fieldTable.getByKey(fieldKey)
         return [testField, fieldNode]
     }
+    
+    // returns all delegateToClasses including delegatedToClasses of sub classes and
+    // recurse delegateToClasses.
+    // If delegateOnly flag is true, 
+    // classNode itself and its super classes are not included in result
+    List<ClassNode> getAllDelegateToClasses(ClassNode classNode, boolean delegateOnly) {
+        List<ClassNode> result = new ArrayList<ClassNode>(8)
+        ClassNode parentNode = classNode
+        while (parentNode != null) {
+            if (!delegateOnly) {
+                result.add(parentNode)
+            }
+            ClassNode delegateToClassNode = getDelegateToClassNode(parentNode)
+            while (delegateToClassNode != null) {
+                result.add(delegateToClassNode)
+                delegateToClassNode = getDelegateToClassNode(delegateToClassNode)
+            }
+            parentNode = parentNode.superClass
+        }
+        return result
+    }
 
     // search field for the specified fieldName from the classNode or it super class
     // - returns [TestField, FieldNode]
@@ -175,33 +211,28 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return [field, fieldNode]
         }
 
+        List<ClassNode> delegateToClassNodes = getAllDelegateToClasses(classNode, true)
+        
         // check only delegateTo class for this class and super class
         TestField fieldDelegate
         FieldNode fieldNodeDelegate
-        ClassNode parentNode = classNode
-        outerLoop: while (parentNode != null) {
-            ClassNode delegateToClassNode = getDelegateToClassNode(parentNode)
-            while (delegateToClassNode != null) {
-                (fieldDelegate, fieldNodeDelegate) =
-                        getThisOrSuperFieldSubNoDelegate(delegateToClassNode, fieldName)
-                if (fieldNodeDelegate != null) {
-                    break outerLoop
-                }
-                delegateToClassNode = getDelegateToClassNode(delegateToClassNode)
+        for (ClassNode  delegateToClassNode : delegateToClassNodes) {
+            (fieldDelegate, fieldNodeDelegate) =
+                    getThisOrSuperFieldSubNoDelegate(delegateToClassNode, fieldName)
+            if (fieldNodeDelegate != null) {
+                return [fieldDelegate, fieldNodeDelegate]
             }
-            parentNode = parentNode.superClass
-        }
-        if (fieldDelegate != null) {
-            return [fieldDelegate, fieldNodeDelegate]
         }
 
         // Some fields are defined dynamically (such as Geb page object contents).
         // These field may not have any FieldeNode information.
-        // TODO should search TestField for super class or delegated class?
-        String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(classNode, fieldName)
-        TestField fieldDynamic = fieldTable.getByKey(fieldKey)
-        if (fieldDynamic != null) {
-            return [fieldDynamic, null]
+        delegateToClassNodes.add(0, classNode) // includes classNode itself
+        for (ClassNode  delegateToClassNode : delegateToClassNodes) {
+            String fieldKey = SrcTreeGeneratorUtils.generateFieldKey(delegateToClassNode, fieldName)
+            TestField fieldDynamic = fieldTable.getByKey(fieldKey)
+            if (fieldDynamic != null) {
+                return [fieldDynamic, null]
+            }
         }
 
         // TestField is not found, but at least FieldNode is found
@@ -300,25 +331,17 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         }
 
         // check only delegateTo class for this class and super class
+        List<ClassNode> delegateToClassNodes = getAllDelegateToClasses(classNode, true)        
         TestMethod methodDelegate
         MethodNode methodNodeDelegate
-        ClassNode parentNode = classNode
-        outerLoop: while (parentNode != null) {
-            ClassNode delegateToClassNode = getDelegateToClassNode(parentNode)
-            while (delegateToClassNode != null) {
-                (methodDelegate, methodNodeDelegate) = getThisOrSuperMethodSubNoDelegate(
-                        delegateToClassNode, methodAsString, argClasses)
-                if (methodNodeDelegate != null) {
-                    break outerLoop
-                }
-                delegateToClassNode = getDelegateToClassNode(delegateToClassNode)
+        for (ClassNode  delegateToClassNode : delegateToClassNodes) {
+            (methodDelegate, methodNodeDelegate) = getThisOrSuperMethodSubNoDelegate(
+                    delegateToClassNode, methodAsString, argClasses)
+            if (methodDelegate != null) {
+                return [methodDelegate, methodNodeDelegate]
             }
-            parentNode = parentNode.superClass
         }
-        if (methodDelegate != null) {
-            return [methodDelegate, methodNodeDelegate]
-        }
-
+      
         // TestMethod is not found, but at least MethodNode is found
         if (methodNode != null) {
             return [method, methodNode]
@@ -413,7 +436,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         ClassNode codeClass
         (code, codeClass) = generateMethodInvokeCodeSub(methodCall, parentMethod)
         for (SrcTreeVisitorAdapter listener : listeners) {
-            if (listener.generatedMethodInvokeCode(code, codeClass)) {
+            if (listener.generatedMethodInvokeCode(code, codeClass, this)) {
                 break;
             }
         }

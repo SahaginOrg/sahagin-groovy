@@ -23,19 +23,19 @@ class TestMainSpec extends GebSpec {
     @TestDoc("テスト1")
     def "宿泊予約が成功すること"() {
         setup: "予約情報入力ページに遷移"
-        ReserveInputPage page = to ReserveInputPage
+        to ReserveInputPage
         when: "予約情報を入力"
-        page.setReserveDate("2015", "5", "30")
-        page.reserveTerm = "1"
+        setReserveDate("2015", "5", "30")
+        reserveTerm = "1"
         page.headCount = "2"
-        page.breakfast = "on"
-        page.earlyCheckInPlan = true
-        page.guestName = "サンプルユーザー"
+        breakfast = "on"
+        earlyCheckInPlan = true
+        guestName = "サンプルユーザー"
         then:
-        assert page.guestName == "サンプルユーザ"
-        page.guestName == "サンプルユーザ"
+        assert guestName == "サンプルユーザ"
+        guestName == "サンプルユーザ"
         when: "次のページへ"
-        page.goNextButton.click()
+        goNextButton.click()
         then: "表示された予約情報をチェック"
     }
 
