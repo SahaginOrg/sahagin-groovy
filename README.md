@@ -12,3 +12,7 @@ For more information, let's go to [Sahagin-Groovy overview](https://github.com/S
 
 - [Sahagin-Groovy overview](https://github.com/SahaginOrg/sahagin-groovy/wiki/Sahagin-Groovy-overview)
 - [Getting started](https://github.com/SahaginOrg/sahagin-groovy/wiki/Getting-started)
+
+# Japanese information
+
+(TODO)
