@@ -338,6 +338,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     }
 
     // handle current pgae delegation
+    // TODO add dynamic delegate mechanism to AdditionalTestDocsAdapter
     @Override
     ClassNode getDelegateToClassNode(ClassNode classNode, CollectCodeVisitor visitor) {
         if (classNode.name == "geb.Browser") {

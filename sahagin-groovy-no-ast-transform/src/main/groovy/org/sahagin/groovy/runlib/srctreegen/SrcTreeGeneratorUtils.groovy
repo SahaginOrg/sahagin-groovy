@@ -20,8 +20,8 @@ import org.sahagin.runlib.additionaltestdoc.AdditionalTestDocs
 import org.sahagin.runlib.external.CaptureStyle
 import org.sahagin.runlib.external.Locale
 import org.sahagin.runlib.external.Page
-import org.sahagin.runlib.external.PageDoc;
-import org.sahagin.runlib.external.PageDocs;
+import org.sahagin.runlib.external.PageDoc
+import org.sahagin.runlib.external.PageDocs
 import org.sahagin.runlib.external.Pages
 import org.sahagin.runlib.external.TestDoc
 import org.sahagin.runlib.external.TestDocs
@@ -32,6 +32,7 @@ import org.sahagin.share.srctree.TestClassTable
 import org.sahagin.share.srctree.TestMethod
 import org.sahagin.share.srctree.TestMethodTable
 
+@SuppressWarnings("deprecation") // ignore Page and Pages annotation warning
 class SrcTreeGeneratorUtils {
     private AdditionalTestDocs additionalTestDocs
     private AcceptableLocales locales
