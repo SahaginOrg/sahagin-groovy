@@ -26,7 +26,7 @@
     <dependency>
       <groupId>org.sahagin</groupId>
       <artifactId>sahagin</artifactId>
-      <version>0.8.99.3-SNAPSHOT</version>
+      <version>0.8.1</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
