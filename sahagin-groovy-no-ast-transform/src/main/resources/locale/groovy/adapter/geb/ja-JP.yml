@@ -1,4 +1,5 @@
 method:
+  geb.Browser.at: 現在のページが「{0}」かをチェック
   geb.Browser.go:
     String: 「{0}」にページ遷移
   geb.Browser.to:

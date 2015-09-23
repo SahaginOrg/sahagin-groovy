@@ -1,4 +1,5 @@
 method:
+  geb.Browser.at: check that current page is '{0}'
   geb.Browser.go:
     String: go to the page '{0}'
   geb.Browser.to:

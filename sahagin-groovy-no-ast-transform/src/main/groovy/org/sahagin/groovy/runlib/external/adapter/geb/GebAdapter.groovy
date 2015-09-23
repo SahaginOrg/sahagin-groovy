@@ -84,6 +84,7 @@ class GebAdapter implements Adapter {
         @Override
         void methodAdd() {
             // in alphabetical order
+            methodAdd("geb.Browser", "at")
             methodAdd("geb.Browser", "go", "String")
             methodAdd("geb.Browser", "to", "java.lang.Class,Object[]", 1)
             methodAdd("geb.navigator.Navigator", "click")
