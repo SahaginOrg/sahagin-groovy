@@ -32,8 +32,7 @@ class GroovyConfig extends Config {
     }
 
     public GroovyConfig(File rootDir) {
-        super()
-        setRootDir(rootDir)
+        super(rootDir)
     }
 
     public File getRootBaseTestDir() {
