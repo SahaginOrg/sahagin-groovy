@@ -10,16 +10,28 @@ class ReserveInputPage extends Page {
     static url = "http://example.selenium.jp/reserveApp"
     static at = { title == "予約情報入力"}
     static content = {
-        reserveYear (testDoc: "宿泊年", wait: true) { $(name: "reserve_y") }
-        reserveMonth (testDoc: "宿泊月") { $(name: "reserve_m") }
-        reserveDay (testDoc: "宿泊日"){ $(name: "reserve_d") }
-        reserveTerm (testDoc: "宿泊日数"){ $(name: "reserve_t") }
-        headCount (testDoc: "人数") { $(name: "hc") }
-        breakfast (testDoc: "朝食"){ $(name: "bf") }
-        earlyCheckInPlan (testDoc: "早めにチェックインプラン"){ $(name: "plan_a") }
-        sightseeingPlan (testDoc: "観光プラン"){ $(name: "plan_b") }
-        guestName (testDoc: "名前"){ $(name: "gname") }
-        goNextButton (wait: true, testDoc: "ボタン「次へ」"){ $("#goto_next") }
+        reserveYear (wait: true) { $(name: "reserve_y") }
+        reserveMonth { $(name: "reserve_m") }
+        reserveDay { $(name: "reserve_d") }
+        reserveTerm { $(name: "reserve_t") }
+        headCount { $(name: "hc") }
+        breakfast { $(name: "bf") }
+        earlyCheckInPlan { $(name: "plan_a") }
+        sightseeingPlan { $(name: "plan_b") }
+        guestName { $(name: "gname") }
+        goNextButton (wait: true){ $("#goto_next") }
+    }
+    static contentTestDoc = {
+        reserveYear { "宿泊年" }
+        reserveMonth { "宿泊月" }
+        reserveDay { "宿泊日" }
+        reserveTerm { "宿泊日数" }
+        headCount { "人数" }
+        breakfast { "朝食" }
+        earlyCheckInPlan { "早めにチェックインプラン" }
+        sightseeingPlan { "観光プラン" }
+        guestName { "名前" }
+        goNextButton { "ボタン「次へ」" }
     }
 
     @TestDoc(value = "宿泊日に「{year}/{month}/{day}」をセット", capture = CaptureStyle.STEP_IN)

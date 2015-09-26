@@ -27,7 +27,7 @@ class TestMainSpec extends GebSpec {
         when: "予約情報を入力"
         setReserveDate("2015", "5", "30")
         reserveTerm = "1"
-        page.headCount = "2"
+        headCount = "2"
         breakfast = "on"
         earlyCheckInPlan = true
         guestName = "サンプルユーザー"

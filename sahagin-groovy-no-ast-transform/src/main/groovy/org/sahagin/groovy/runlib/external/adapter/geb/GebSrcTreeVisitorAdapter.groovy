@@ -40,15 +40,16 @@ import org.sahagin.share.srctree.code.Field
 import org.sahagin.share.srctree.code.SubMethodInvoke
 import org.sahagin.share.srctree.code.UnknownCode
 
-// This visitor collects all page contents and set them to fieldTable
+// This visitor collects all page contentTestDocs and set them to fieldTable
 class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     // pair of field key and its value type ClassNode
     private Map<String, ClassNode> fieldValueClassMap = new HashMap<String, ClassNode>(128)
     private ClassNode currentPage = null
     
-    // Searches static content initialization block from the specific static initializer method node.
+    // Searches static content or contentTestDoc initialization block 
+    // from the specific static initializer method node.
     // Returns null if not found
-    private BlockStatement getContentClosureBlock(MethodNode method) {
+    private BlockStatement getContentClosureBlock(MethodNode method, String contentFieldName) {
         if (!GroovyASTUtils.inheritsFromClass(method.declaringClass, "geb.Page")) {
             return null
         }
@@ -74,10 +75,10 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
                 continue
             }
             FieldNode field = (left as FieldExpression).field
-            if (!field.isStatic() || field.name != "content") {
+            if (!field.isStatic() || field.name != contentFieldName) {
                 continue
             }
-            // found "content" property initialization part
+            // found content or contentTestDoc property initialization part
             Expression right = (exp as BinaryExpression).rightExpression
             if (!(right instanceof ClosureExpression)) {
                 continue
@@ -90,27 +91,49 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         }
         return null
     }
+    
+    // returns empty list if not found
+    List<MethodCallExpression> getContentMethodCalls(BlockStatement contentClosureBlock) {
+        if (contentClosureBlock == null) {
+            return new ArrayList<MethodCallExpression>(0)
+        }
+        List<MethodCallExpression> result = new ArrayList<MethodCallExpression>(32)
+        // iterate page object content definition
+        for (Statement statement : contentClosureBlock.statements) {
+            Expression expression
+            if (statement instanceof ExpressionStatement) {
+                expression = (statement as ExpressionStatement).expression
+            } else if (statement instanceof ReturnStatement) {
+                expression = (statement as ReturnStatement).expression
+            } else {
+                continue
+            }
+            if (!(expression instanceof MethodCallExpression)) {
+                continue
+            }
+            // TODO ignore the same name fields in one content
+            MethodCallExpression methodCall = (expression as MethodCallExpression)
+            result.add(methodCall)
+        }
+        return result
+    }
 
-    // return [testDoc string, content value Expression].
-    // return [null, null] if not found
-    def getTestDocAndValueFromContent(MethodCallExpression methodCall) {
+    // return content value Expression.
+    // return null if not found
+    def getValueFromContentMethodCall(MethodCallExpression methodCall) {
         if (!(methodCall.arguments instanceof ArgumentListExpression)) {
             return [null, null]
         }
         List<Expression> arguments =
                 (methodCall.arguments as ArgumentListExpression).expressions
-        // first argument is option map, second argument is content definition closure
-        if (arguments.size() < 2) {
+        if (arguments.size() == 0) {
             return [null, null]
         }
-        if (!(arguments.get(0) instanceof MapExpression)) {
+        // last argument is content definition closure
+        if (!(arguments.get(arguments.size() - 1) instanceof ClosureExpression)) {
             return [null, null]
         }
-        List<MapEntryExpression> mapEntries = (arguments.get(0) as MapExpression).mapEntryExpressions
-        if (!(arguments.get(1) instanceof ClosureExpression)) {
-            return [null, null]
-        }
-        Statement closureCode = (arguments.get(1) as ClosureExpression).code
+        Statement closureCode = (arguments.get(arguments.size() - 1) as ClosureExpression).code
         if (!(closureCode instanceof BlockStatement)) {
             return [null, null]
         }
@@ -118,118 +141,57 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         if (closureStatements.size() != 1) {
             return [null, null]
         }
-        Expression valueExpression
         if (closureStatements.get(0) instanceof ExpressionStatement) {
-            valueExpression = (closureStatements.get(0) as ExpressionStatement).expression
+            return (closureStatements.get(0) as ExpressionStatement).expression
         } else if (closureStatements.get(0) instanceof ReturnStatement) {
-            valueExpression = (closureStatements.get(0) as ReturnStatement).expression
+            return (closureStatements.get(0) as ReturnStatement).expression
         } else {
-            return [null, null]
+            return null
         }
-        for (MapEntryExpression mapEntry : mapEntries) {
-            if (!(mapEntry.keyExpression instanceof ConstantExpression)) {
-                continue
-            }
-            String mapKey = (mapEntry.keyExpression as ConstantExpression).value.toString()
-            if (mapKey != "testDoc") {
-                continue
-            }
-            if (!(mapEntry.valueExpression instanceof ConstantExpression)) {
-                // TODO throw more user friendly error
-                throw new RuntimeException(
-                "testDoc value must be constant: " + mapEntry.valueExpression)
-            }
-            String testDoc = (mapEntry.valueExpression as ConstantExpression).value.toString()
-            return [testDoc, valueExpression]
-        }
-        return [null, null]
-    }
-
-    // collect all page object content values and types,
-    // and set them to fieldValueClassMap before collecting other codes
-    @Override
-    boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor) {
-        BlockStatement contentClosureBlock = getContentClosureBlock(method)
-        if (contentClosureBlock == null) {
-            return false
-        }
-
-        List<Statement> list = contentClosureBlock.statements
-        // iterate page object content definition
-        for (Statement statement : list) {
-            Expression expression
-            if (statement instanceof ExpressionStatement) {
-                expression = (statement as ExpressionStatement).expression
-            } else if (statement instanceof ReturnStatement) {
-                expression = (statement as ReturnStatement).expression
-            } else {
-                continue
-            }
-            if (!(expression instanceof MethodCallExpression)) {
-                continue
-            }
-            MethodCallExpression methodCall = (expression as MethodCallExpression)
-            String testDoc
-            Expression fieldValue
-            (testDoc, fieldValue) = getTestDocAndValueFromContent(methodCall)
-            if (testDoc == null) {
-                continue
-            }
-            TestField testField = visitor.fieldTable.getByKey(
-                SrcTreeGeneratorUtils.generateFieldKey(method.declaringClass, methodCall.methodAsString))
-            assert testField != null
-
-            Code fieldValueCode
-            ClassNode fieldValueClass
-            (fieldValueCode, fieldValueClass) =
-            visitor.generateExpressionCode(fieldValue, method)
-            testField.value = fieldValueCode
-            fieldValueClassMap[testField.key] = fieldValueClass
-        }
-        return true
     }
     
-    // field value is not set by this method
+    // Get TestField information from content and contentTestDoc, and set them to fieldTable.
+    // This process must be executed by collectSubMethod 
+    // to add the class with only content field to the class table.
+    // On the other hand, calculating field value or type is executed by beforeCollectCode
+    // since the class table is incomplete on collectSubMethod phase 
+    // and it makes impossible to calculate field value or type correctly.
     @Override
     boolean collectSubMethod(MethodNode method, MethodType type, CollectSubVisitor visitor) {
-        BlockStatement contentClosureBlock = getContentClosureBlock(method)
+        // collect testFields
+        BlockStatement contentClosureBlock = getContentClosureBlock(method, "content")
         if (contentClosureBlock == null) {
-            return false
+            return false // not handle here since it is not content closure
         }
-
-        List<Statement> list = contentClosureBlock.statements
-        List<TestField> testFields = new ArrayList<TestField>(list.size())
-        // iterate page object content definition
-        for (Statement statement : list) {
-            Expression expression
-            if (statement instanceof ExpressionStatement) {
-                expression = (statement as ExpressionStatement).expression
-            } else if (statement instanceof ReturnStatement) {
-                expression = (statement as ReturnStatement).expression
-            } else {
-                continue
-            }
-            if (!(expression instanceof MethodCallExpression)) {
-                continue
-            }
-            MethodCallExpression methodCall = (expression as MethodCallExpression)
-            String testDoc
-            Expression fieldValue
-            (testDoc, fieldValue) = getTestDocAndValueFromContent(methodCall)
-            if (testDoc == null) {
-                continue
-            }
+        List<MethodCallExpression> contentMethodCalls = getContentMethodCalls(contentClosureBlock)
+        List<TestField> testFields = new ArrayList<TestField>(contentMethodCalls.size())
+        for (MethodCallExpression methodCall : contentMethodCalls) {
             TestField testField = new TestField()
             // each method name will become page object property
             testField.simpleName = methodCall.methodAsString
-            testField.testDoc = testDoc
             testFields.add(testField)
         }
-
         if (testFields.size() == 0) {
             return true
         }
-
+        
+        // collect testDocs
+        BlockStatement contentTestDocClosureBlock = getContentClosureBlock(method, "contentTestDoc")
+        List<MethodCallExpression> contentTestDocMethodCalls = 
+        getContentMethodCalls(contentTestDocClosureBlock)
+        Map<String, String> testDocs = new HashMap<String, String>(contentTestDocMethodCalls.size())
+        for (MethodCallExpression methodCall : contentTestDocMethodCalls) {
+            Expression fieldValueExp = getValueFromContentMethodCall(methodCall)
+            if (!(fieldValueExp instanceof ConstantExpression)) {
+                continue
+            }
+            Object fieldValue = ((ConstantExpression) fieldValueExp).value
+            if (fieldValue == null) {
+                continue
+            }
+            testDocs.put(methodCall.methodAsString, fieldValue.toString())
+        }
+        
         ClassNode classNode = method.declaringClass
         String classQName = GroovyASTUtils.getClassQualifiedName(classNode)
         TestClass testClass = visitor.rootClassTable.getByKey(classQName)
@@ -246,6 +208,10 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             testField.testClass = testClass
             testField.key =
                     SrcTreeGeneratorUtils.generateFieldKey(classNode, testField.simpleName)
+            String testDoc = (String) testDocs.get(testField.simpleName)
+            if (testDoc != null) {
+                testField.testDoc = testDoc
+            } 
             visitor.fieldTable.addTestField(testField)
             testClass.addTestFieldKey(testField.key)
             testClass.addTestField(testField)
@@ -253,6 +219,33 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
 
         return true
     }
+    
+    // collect all page object content values and types,
+    // and set them to fieldValueClassMap before collecting other codes
+    // - also see collectSubMethod method doc
+    @Override
+    boolean beforeCollectCode(MethodNode method, CollectCodeVisitor visitor) {
+        BlockStatement contentClosureBlock = getContentClosureBlock(method, "content")
+        if (contentClosureBlock == null) {
+            return false // not handle here since it is not content closure
+        }
+        List<MethodCallExpression> contentMethodCalls = getContentMethodCalls(contentClosureBlock)
+        List<TestField> testFields = new ArrayList<TestField>(contentMethodCalls.size())
+        for (MethodCallExpression methodCall : contentMethodCalls) {
+            Expression fieldValue = getValueFromContentMethodCall(methodCall)
+            TestField testField = visitor.fieldTable.getByKey(
+                SrcTreeGeneratorUtils.generateFieldKey(method.declaringClass, methodCall.methodAsString))
+            assert testField != null
+
+            Code fieldValueCode
+            ClassNode fieldValueClass
+            (fieldValueCode, fieldValueClass) =
+            visitor.generateExpressionCode(fieldValue, method)
+            fieldValueClassMap[testField.key] = fieldValueClass
+        }
+        return true
+    }
+
     
     // get current page from at, to, via method argument
     @Override
