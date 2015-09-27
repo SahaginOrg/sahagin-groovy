@@ -3,6 +3,10 @@ checkout:
     - git submodule sync
     - git submodule update --init
 
+dependencies:
+  override: 
+    - mvn dependency:resolve -f sahagin-groovy-no-ast-transform/pom.xml
+
 test:
   override:
     - mvn clean test -f sahagin-groovy-no-ast-transform/pom.xml
