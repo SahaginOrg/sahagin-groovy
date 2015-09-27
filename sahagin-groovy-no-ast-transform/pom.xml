@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.sahagin</groupId>
     <artifactId>sahagin-groovy-parent</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.8.2</version>
   </parent>
   
   <artifactId>sahagin-groovy-no-ast-transformation</artifactId>
@@ -26,7 +26,7 @@
     <dependency>
       <groupId>org.sahagin</groupId>
       <artifactId>sahagin</artifactId>
-      <version>0.8.2-SNAPSHOT</version>
+      <version>0.8.2</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
