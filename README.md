@@ -9,7 +9,7 @@ Sahagin-Groovy is Groovy implementation for [Sahagin](https://github.com/Sahagin
 
 Sahagin-Groovy supports Geb, Spock, JUnit4, and can easily generate their result reports.
 
-For more information, let's go to [Sahagin-Groovy overview](https://github.com/SahaginOrg/sahagin-groovy/wiki/Sahagin-Groovy-overview).
+Sahagin-Groovy is now beta version. For more information, let's go to [Sahagin-Groovy overview](https://github.com/SahaginOrg/sahagin-groovy/wiki/Sahagin-Groovy-overview).
 
 # Japanese information
 
