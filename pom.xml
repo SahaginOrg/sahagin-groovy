@@ -30,6 +30,18 @@
     <developerConnection>scm:git:git://github.com/SahaginOrg/sahagin-groovy.git</developerConnection>
     <url>https://github.com/SahaginOrg/sahagin-groovy</url>
   </scm>
+  <repositories>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
