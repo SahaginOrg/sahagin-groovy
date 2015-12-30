@@ -22,18 +22,18 @@ class GroovyAdapterContainer extends AdapterContainer {
 
     // some method call of this class requires initialization before calling the method
     public static void globalInitialize(AcceptableLocales locales, String acceptableTestFramework) {
-        globalInstance = new GroovyAdapterContainer(locales, acceptableTestFramework)
+        setGlobalInstance(new GroovyAdapterContainer(locales, acceptableTestFramework))
     }
 
     public static GroovyAdapterContainer globalInstance() {
-        if (globalInstance == null) {
+        if (AdapterContainer.globalInstance() == null) {
             throw new IllegalStateException("globalInitialize is not called yet")
         }
-        if (!(globalInstance instanceof GroovyAdapterContainer)) {
+        if (!(AdapterContainer.globalInstance() instanceof GroovyAdapterContainer)) {
             throw new IllegalStateException(
-                    "global instance is not GroovyAdapterContainer: " + globalInstance)
+                    "global instance is not GroovyAdapterContainer: " + AdapterContainer.globalInstance())
         }
-        return globalInstance as GroovyAdapterContainer
+        return AdapterContainer.globalInstance() as GroovyAdapterContainer
     }
 
     // TODO throw error if called　from other method than initialSetAdapter
