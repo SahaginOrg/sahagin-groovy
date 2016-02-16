@@ -13,4 +13,5 @@ Sahagin-Groovy is now beta version. For more information, let's go to [Sahagin-G
 
 # Japanese information
 
-(TODO)
+- [日本語情報](http://blog.trident-qa.com/2015/01/sahagin-first-release-1/)
+- [日本語フォーラム](https://github.com/SahaginOrg/japanese-forum)
