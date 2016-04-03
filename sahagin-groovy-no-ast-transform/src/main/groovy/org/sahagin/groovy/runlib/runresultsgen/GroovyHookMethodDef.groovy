@@ -168,7 +168,16 @@ class GroovyHookMethodDef {
             int hookedLine, int actualhookedLine) {
         initializedCheck()
         manager.beforeCodeLineHook(hookedClassQualifiedName,
-                hookedMethodSimpleName, actualHookedMethodSimpleName, 
+                hookedMethodSimpleName, actualHookedMethodSimpleName,
+                hookedArgClassesStr, hookedLine, actualhookedLine)
+    }
+
+    public static void afterCodeLineHook(String hookedClassQualifiedName, String hookedMethodSimpleName,
+            String actualHookedMethodSimpleName, String hookedArgClassesStr,
+            int hookedLine, int actualhookedLine) {
+        initializedCheck()
+        manager.afterCodeLineHook(hookedClassQualifiedName,
+                hookedMethodSimpleName, actualHookedMethodSimpleName,
                 hookedArgClassesStr, hookedLine, actualhookedLine)
     }
 
