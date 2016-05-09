@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.sahagin</groupId>
     <artifactId>sahagin-groovy-parent</artifactId>
-    <version>0.8.3-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
   </parent>
   
   <artifactId>sahagin-groovy-no-ast-transformation</artifactId>
@@ -21,12 +21,12 @@
     <dependency>
       <groupId>org.gebish</groupId>
       <artifactId>geb-core</artifactId>
-      <version>0.12.2</version>
+      <version>0.13.1</version>
     </dependency>
     <dependency>
       <groupId>org.sahagin</groupId>
       <artifactId>sahagin</artifactId>
-      <version>0.8.3-SNAPSHOT</version>
+      <version>0.9-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -43,13 +43,13 @@
     <dependency>
       <groupId>org.gebish</groupId>
       <artifactId>geb-junit4</artifactId>
-      <version>0.12.2</version>
+      <version>0.13.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.gebish</groupId>
       <artifactId>geb-spock</artifactId>
-      <version>0.12.2</version>
+      <version>0.13.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

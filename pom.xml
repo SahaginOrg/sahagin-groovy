@@ -6,7 +6,7 @@
   </properties>
   <groupId>org.sahagin</groupId>
   <artifactId>sahagin-groovy-parent</artifactId>
-  <version>0.8.3-SNAPSHOT</version>
+  <version>0.9-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Sahagin Groovy Parent</name>
   <description>Parent project for Sahagin Groovy and its internal module.</description>
