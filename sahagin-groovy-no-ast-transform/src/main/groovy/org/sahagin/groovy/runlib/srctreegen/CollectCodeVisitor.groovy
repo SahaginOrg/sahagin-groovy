@@ -184,7 +184,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
     // If delegateOnly flag is true, 
     // classNode itself and its super classes are not included in result
     List<ClassNode> getAllDelegateToClasses(ClassNode classNode, boolean delegateOnly) {
-        List<ClassNode> result = new ArrayList<ClassNode>(8)
+        List<ClassNode> result = new ArrayList<>(8)
         ClassNode parentNode = classNode
         while (parentNode != null) {
             if (!delegateOnly) {
@@ -392,8 +392,8 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             return generateUnknownCode(original, ClassHelper.OBJECT_TYPE)
         }
         TupleExpression argumentList = arguments as TupleExpression
-        List<Code> argCodes = new ArrayList<Code>(argumentList.expressions.size())
-        List<ClassNode> argClasses = new ArrayList<ClassNode>(argumentList.expressions.size())
+        List<Code> argCodes = new ArrayList<>(argumentList.expressions.size())
+        List<ClassNode> argClasses = new ArrayList<>(argumentList.expressions.size())
         for (Expression argExpression : argumentList.expressions) {
             Code argCode
             ClassNode argClass
@@ -496,7 +496,7 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
             TestMethod getterMethod
             MethodNode getterMethodNode
             (getterMethod, getterMethodNode) = getThisOrSuperTestMethod(
-                fieldOwnerType, getterName, new ArrayList<ClassNode>(0))
+                fieldOwnerType, getterName, new ArrayList<>(0))
             if (getterMethodNode != null) {
                 fieldType = getterMethodNode.returnType
             } else {

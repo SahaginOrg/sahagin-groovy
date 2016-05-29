@@ -65,7 +65,7 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
     @Override
     List<CodeLine> collectMethodStatementCode(Statement statement,
             MethodNode method, MethodType methodType, CollectCodeVisitor visitor) {
-        return new ArrayList<CodeLine>(0)
+        return new ArrayList<>(0)
     }
 
     @Override

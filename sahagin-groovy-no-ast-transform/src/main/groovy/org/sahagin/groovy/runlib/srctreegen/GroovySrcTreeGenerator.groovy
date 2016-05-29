@@ -164,7 +164,7 @@ class GroovySrcTreeGenerator {
         // TODO support Java and Groovy mixed project
         String[] extensions = ["groovy"]
         Collection<File> srcFileCollection = FileUtils.listFiles(srcRootDir, extensions, true)
-        List<File> srcFileList = new ArrayList<File>(srcFileCollection)
+        List<File> srcFileList = new ArrayList<>(srcFileCollection)
         String[] srcFilePaths = new String[srcFileList.size()]
         for (int i = 0; i < srcFileList.size(); i++) {
             srcFilePaths[i] = srcFileList.get(i).absolutePath

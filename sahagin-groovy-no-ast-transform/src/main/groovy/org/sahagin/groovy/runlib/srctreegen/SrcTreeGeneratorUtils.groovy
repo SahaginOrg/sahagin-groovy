@@ -161,7 +161,7 @@ class SrcTreeGeneratorUtils {
         }
 
         // all @testDoc annotations including annotations contained in @TestDocs
-        List<AnnotationNode> allTestDocAnnotations = new ArrayList<AnnotationNode>(2)
+        List<AnnotationNode> allTestDocAnnotations = new ArrayList<>(2)
         CaptureStyle resultCaptureStyle = null
 
         if (testDocAnnotation != null) {
@@ -173,8 +173,7 @@ class SrcTreeGeneratorUtils {
         }
 
         // get resultTestDocMap
-        Map<Locale, String> resultTestDocMap = 
-        new HashMap<Locale, String>(allTestDocAnnotations.size())
+        Map<Locale, String> resultTestDocMap = new HashMap<>(allTestDocAnnotations.size())
         for (AnnotationNode eachTestDocAnnotation : allTestDocAnnotations) {
             Object value = getAnnotationValue(eachTestDocAnnotation, 'value')
             Locale locale = getAnnotationLocaleValue(eachTestDocAnnotation, 'locale')
@@ -189,9 +188,9 @@ class SrcTreeGeneratorUtils {
             List<AnnotationNode> annotations) {
 
         // all @PageDoc or @Page annotations including annotations contained in @PageDocs or @Page
-        List<AnnotationNode> allPageAnnotations = new ArrayList<AnnotationNode>(2)
+        List<AnnotationNode> allPageAnnotations = new ArrayList<>(2)
 
-        List<Class<?>> singlePageAnnotationClasses = new ArrayList<Class<?>>(2);
+        List<Class<?>> singlePageAnnotationClasses = new ArrayList<>(2);
         singlePageAnnotationClasses.add(PageDoc.class);
         singlePageAnnotationClasses.add(Page.class);
         for (Class<?> annotationClass : singlePageAnnotationClasses) {
@@ -206,7 +205,7 @@ class SrcTreeGeneratorUtils {
             allPageAnnotations.add(annotation);
         }
         
-        List<Class<?>> multiplePageAnnotationClasses = new ArrayList<Class<?>>(2);
+        List<Class<?>> multiplePageAnnotationClasses = new ArrayList<>(2);
         multiplePageAnnotationClasses.add(PageDocs.class);
         multiplePageAnnotationClasses.add(Pages.class);
         for (Class<?> annotationClass : multiplePageAnnotationClasses) {
@@ -225,10 +224,9 @@ class SrcTreeGeneratorUtils {
                 allPageAnnotations.add((IAnnotationBinding) element);
             }
         }
-        
+
         // get resultPageMap
-        Map<Locale, String> resultPageMap = 
-        new HashMap<Locale, String>(allPageAnnotations.size())
+        Map<Locale, String> resultPageMap = new HashMap<>(allPageAnnotations.size())
         for (AnnotationNode eachPageAnnotation : allPageAnnotations) {
             Object value = getAnnotationValue(eachPageAnnotation, 'value')
             Locale locale = getAnnotationLocaleValue(eachPageAnnotation, 'locale')

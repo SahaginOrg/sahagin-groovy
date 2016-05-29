@@ -9,7 +9,7 @@ import org.sahagin.runlib.external.adapter.AdapterContainer
 class GroovyAdapterContainer extends AdapterContainer {
     private String acceptableTestFramework = null
     private GroovyRootMethodAdapter rootMethodAdapter = null
-    private List<SrcTreeVisitorAdapter> srcTreeVisitorAdapters = new ArrayList<SrcTreeVisitorAdapter>(4)
+    private List<SrcTreeVisitorAdapter> srcTreeVisitorAdapters = new ArrayList<>(4)
 
     // make constructor private
     private GroovyAdapterContainer(AcceptableLocales locales, String acceptableTestFramework) {

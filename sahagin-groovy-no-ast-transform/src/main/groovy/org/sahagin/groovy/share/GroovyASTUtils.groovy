@@ -21,7 +21,7 @@ class GroovyASTUtils {
     static List<String> getArgClassQualifiedNames(MethodNode method) {
         // TODO parameterized etc
 
-        List<String> result = new ArrayList<String>(method.parameters.length)
+        List<String> result = new ArrayList<>(method.parameters.length)
         for (Parameter param : method.parameters) {
             result.add(getClassQualifiedName(param.type))
         }

@@ -43,7 +43,7 @@ import org.sahagin.share.srctree.code.UnknownCode
 // This visitor collects all page contentTestDocs and set them to fieldTable
 class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
     // pair of field key and its value type ClassNode
-    private Map<String, ClassNode> fieldValueClassMap = new HashMap<String, ClassNode>(128)
+    private Map<String, ClassNode> fieldValueClassMap = new HashMap<>(128)
     private ClassNode currentPage = null
     
     // Searches static content or contentTestDoc initialization block 
@@ -91,13 +91,13 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         }
         return null
     }
-    
+
     // returns empty list if not found
     List<MethodCallExpression> getContentMethodCalls(BlockStatement contentClosureBlock) {
         if (contentClosureBlock == null) {
-            return new ArrayList<MethodCallExpression>(0)
+            return new ArrayList<>(0)
         }
-        List<MethodCallExpression> result = new ArrayList<MethodCallExpression>(32)
+        List<MethodCallExpression> result = new ArrayList<>(32)
         // iterate page object content definition
         for (Statement statement : contentClosureBlock.statements) {
             Expression expression
@@ -164,7 +164,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return false // not handle here since it is not content closure
         }
         List<MethodCallExpression> contentMethodCalls = getContentMethodCalls(contentClosureBlock)
-        List<TestField> testFields = new ArrayList<TestField>(contentMethodCalls.size())
+        List<TestField> testFields = new ArrayList<>(contentMethodCalls.size())
         for (MethodCallExpression methodCall : contentMethodCalls) {
             TestField testField = new TestField()
             // each method name will become page object property
@@ -179,7 +179,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         BlockStatement contentTestDocClosureBlock = getContentClosureBlock(method, "contentTestDoc")
         List<MethodCallExpression> contentTestDocMethodCalls = 
         getContentMethodCalls(contentTestDocClosureBlock)
-        Map<String, String> testDocs = new HashMap<String, String>(contentTestDocMethodCalls.size())
+        Map<String, String> testDocs = new HashMap<>(contentTestDocMethodCalls.size())
         for (MethodCallExpression methodCall : contentTestDocMethodCalls) {
             Expression fieldValueExp = getValueFromContentMethodCall(methodCall)
             if (!(fieldValueExp instanceof ConstantExpression)) {
@@ -230,7 +230,7 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return false // not handle here since it is not content closure
         }
         List<MethodCallExpression> contentMethodCalls = getContentMethodCalls(contentClosureBlock)
-        List<TestField> testFields = new ArrayList<TestField>(contentMethodCalls.size())
+        List<TestField> testFields = new ArrayList<>(contentMethodCalls.size())
         for (MethodCallExpression methodCall : contentMethodCalls) {
             Expression fieldValue = getValueFromContentMethodCall(methodCall)
             TestField testField = visitor.fieldTable.getByKey(
