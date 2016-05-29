@@ -117,9 +117,7 @@ class GroovyHookMethodDef {
                     try {
                         report.generate(config.rootBaseReportIntermediateDataDir,
                                 config.rootBaseReportOutputDir)
-                    } catch (IllegalDataStructureException e) {
-                        throw new RuntimeException(e)
-                    } catch (IllegalTestScriptException e) {
+                    } catch (IllegalDataStructureException | IllegalTestScriptException e) {
                         throw new RuntimeException(e)
                     }
                 }
