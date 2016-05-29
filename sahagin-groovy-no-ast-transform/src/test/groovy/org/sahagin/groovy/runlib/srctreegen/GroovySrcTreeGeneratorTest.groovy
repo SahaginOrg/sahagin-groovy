@@ -55,9 +55,9 @@ class GroovySrcTreeGeneratorTest {
         }
 
         SrcTree srcTree = gen.generateWithRuntimeClassPath(config.rootBaseTestDir)
-        YamlUtils.dump(srcTree.toYamlObject(), new File(config.rootBaseReportIntermediateDataDir, "srcTree"))
+        YamlUtils.dump(srcTree.toYamlObject(), new File(config.rootBaseRunOutputIntermediateDataDir, "srcTree"))
         HtmlReport report = new HtmlReport()
-        report.generate(config.rootBaseReportIntermediateDataDir, config.rootBaseReportOutputDir)
+        report.generate(config.rootBaseReportInputIntermediateDataDirs, config.rootBaseReportOutputDir)
     }
 
 }
