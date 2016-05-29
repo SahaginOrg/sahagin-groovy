@@ -16,5 +16,4 @@ class GroovyJavaSystemAdapter implements Adapter {
     public String getName() {
         return "javaSystem"
     }
-
 }

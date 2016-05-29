@@ -16,5 +16,4 @@ class GroovyJavaLibAdapter implements Adapter {
     public String getName() {
         return "javaLib"
     }
-
 }

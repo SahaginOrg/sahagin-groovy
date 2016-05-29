@@ -95,5 +95,4 @@ class GebAdapter implements Adapter {
             methodAdd("geb.Page", '$', "String")
         }
     }
-
 }

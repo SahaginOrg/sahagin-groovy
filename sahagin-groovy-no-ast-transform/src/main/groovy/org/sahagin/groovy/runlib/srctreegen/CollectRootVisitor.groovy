@@ -121,5 +121,4 @@ class CollectRootVisitor extends ClassCodeVisitorSupport {
 
         super.visitMethod(node)
     }
-
 }

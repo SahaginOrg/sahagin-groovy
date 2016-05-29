@@ -59,5 +59,4 @@ class GroovySrcTreeGeneratorTest {
         HtmlReport report = new HtmlReport()
         report.generate(config.rootBaseReportInputIntermediateDataDirs, config.rootBaseReportOutputDir)
     }
-
 }

@@ -834,5 +834,4 @@ class CollectCodeVisitor extends ClassCodeVisitorSupport {
         super.visitMethod(node)
         return
     }
-
 }

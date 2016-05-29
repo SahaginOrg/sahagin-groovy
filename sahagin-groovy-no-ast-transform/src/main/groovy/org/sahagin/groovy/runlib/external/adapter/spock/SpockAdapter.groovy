@@ -59,7 +59,5 @@ class SpockAdapter implements Adapter {
         public String getName() {
             return name
         }
-
     }
-
 }

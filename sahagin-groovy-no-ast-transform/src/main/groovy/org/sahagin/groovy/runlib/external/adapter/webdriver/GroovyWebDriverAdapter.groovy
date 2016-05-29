@@ -16,5 +16,4 @@ class GroovyWebDriverAdapter implements Adapter {
     public String getName() {
         return "webDriver"
     }
-
 }

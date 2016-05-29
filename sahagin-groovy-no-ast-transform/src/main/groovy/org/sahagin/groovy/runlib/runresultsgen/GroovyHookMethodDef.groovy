@@ -180,5 +180,4 @@ class GroovyHookMethodDef {
                 hookedMethodSimpleName, actualHookedMethodSimpleName,
                 hookedArgClassesStr, hookedLine, actualhookedLine)
     }
-
 }

@@ -110,7 +110,7 @@ class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         if (currentSpockLabel != "then" && currentSpockLabel != "expect") {
             return codeLine
         }
-        
+
         String implicitAssertMethodKey = TestMethod.generateMethodKey(
             CLASS_QUALIFIED_NAME, METHOD_IMPLICIT_ASSERT)
         TestMethod implicitAssertMethod = visitor.subMethodTable.getByKey(implicitAssertMethodKey)
@@ -123,5 +123,4 @@ class SpockSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
         return visitor.generateCodeLine(
             statement, implicitAssertMethodInvoke, ClassHelper.VOID_TYPE).first()
     }
-
 }

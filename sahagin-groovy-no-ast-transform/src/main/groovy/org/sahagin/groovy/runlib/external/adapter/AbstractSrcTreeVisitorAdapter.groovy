@@ -101,5 +101,4 @@ class AbstractSrcTreeVisitorAdapter implements SrcTreeVisitorAdapter {
             CollectCodeVisitor visitor) {
         return false
     }
-
 }

@@ -18,9 +18,8 @@ class SpockAdditionalTestDocsAdapter extends ResourceAdditionalTestDocsAdapter {
     }
 
     @Override
-    public void methodAdd() {        
+    public void methodAdd() {
         // in alphabetical order
         methodAdd(CLASS_QUALIFIED_NAME, METHOD_IMPLICIT_ASSERT, null, CaptureStyle.NONE);
     }
-
 }

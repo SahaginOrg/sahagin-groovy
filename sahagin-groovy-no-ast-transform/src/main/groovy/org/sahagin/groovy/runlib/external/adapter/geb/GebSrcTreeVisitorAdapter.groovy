@@ -345,5 +345,4 @@ class GebSrcTreeVisitorAdapter extends AbstractSrcTreeVisitorAdapter {
             return null
         }
     }
-
 }

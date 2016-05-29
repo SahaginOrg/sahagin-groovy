@@ -67,5 +67,4 @@ class GroovyAdapterContainer extends AdapterContainer {
     public List<SrcTreeVisitorAdapter> getSrcTreeVisitorAdapters() {
         return srcTreeVisitorAdapters
     }
-
 }

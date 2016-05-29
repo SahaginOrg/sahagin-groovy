@@ -178,7 +178,7 @@ class RunResultsGenTransformation implements ASTTransformation {
                             TryCatchStatement tryCatchStatement =
                             new TryCatchStatement(tryStatement, finallyStatement)
                             tryCatchStatement.addCatch(catchStatement)
-                            
+
                             BlockStatement newBlock = new BlockStatement()
                             newBlock.variableScope = block.variableScope
                             newBlock.addStatement(tryCatchStatement)
@@ -189,5 +189,4 @@ class RunResultsGenTransformation implements ASTTransformation {
             }
         }
     }
-
 }

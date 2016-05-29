@@ -41,5 +41,4 @@ class DelegateResolver {
         resolveSub(rootClassTable)
         resolveSub(subClassTable)
     }
-
 }

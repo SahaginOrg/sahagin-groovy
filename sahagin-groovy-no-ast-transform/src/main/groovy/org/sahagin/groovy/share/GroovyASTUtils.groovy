@@ -78,5 +78,4 @@ class GroovyASTUtils {
             List<AnnotationNode> annotations, Class<?> annotationClass) {
         return getAnnotationNode(annotations, annotationClass.canonicalName)
     }
-
 }

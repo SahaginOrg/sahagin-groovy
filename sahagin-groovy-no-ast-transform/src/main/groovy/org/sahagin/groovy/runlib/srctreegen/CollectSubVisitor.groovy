@@ -141,7 +141,4 @@ class CollectSubVisitor extends ClassCodeVisitorSupport {
 
         super.visitMethod(node)
     }
-
 }
-
-
