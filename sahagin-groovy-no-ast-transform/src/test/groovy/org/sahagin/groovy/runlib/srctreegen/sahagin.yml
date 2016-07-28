@@ -9,4 +9,6 @@ groovy:
 common:
   userLocale: ja-JP
   runOutputIntermediateDataDir: ../../../../../../../../bin/report-in
+  reportInputIntermediateDataDirs:
+    - ../../../../../../../../bin/report-in
   reportOutputDir: ../../../../../../../../bin/report-out

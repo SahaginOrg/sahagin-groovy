@@ -115,8 +115,8 @@ class GroovyHookMethodDef {
                 public void run() {
                     HtmlReport report = new HtmlReport()
                     try {
-                        report.generate(config.rootBaseReportIntermediateDataDir,
-                                config.rootBaseReportOutputDir)
+                        report.generate(config.rootBaseReportInputIntermediateDataDirs,
+                            config.rootBaseReportOutputDir)
                     } catch (IllegalDataStructureException | IllegalTestScriptException e) {
                         throw new RuntimeException(e)
                     }
@@ -129,7 +129,7 @@ class GroovyHookMethodDef {
         // generate and dump srcTree
         GroovySrcTreeGenerator generator = new GroovySrcTreeGenerator(
                 AdapterContainer.globalInstance().additionalTestDocs, locales)
-        File srcTreeFile = CommonPath.srcTreeFile(config.rootBaseReportIntermediateDataDir)
+        File srcTreeFile = CommonPath.srcTreeFile(config.rootBaseRunOutputIntermediateDataDir)
         SrcTree srcTree = generator.generateWithRuntimeClassPath(config.rootBaseTestDir)
         SrcTreeChecker.check(srcTree)
         YamlUtils.dump(srcTree.toYamlObject(), srcTreeFile)
