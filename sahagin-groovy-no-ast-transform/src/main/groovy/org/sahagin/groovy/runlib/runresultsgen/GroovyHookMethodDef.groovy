@@ -101,8 +101,8 @@ class GroovyHookMethodDef {
         }
 
         // delete previous data
-        if (config.rootBaseReportIntermediateDataDir.exists()) {
-            FileUtils.deleteDirectory(config.rootBaseReportIntermediateDataDir)
+        if (config.rootBaseRunOutputIntermediateDataDir.exists()) {
+            FileUtils.deleteDirectory(config.rootBaseRunOutputIntermediateDataDir)
         }
         
         SrcTree srcTree = generateAndDumpSrcTree(config, locales)
