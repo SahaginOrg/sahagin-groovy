@@ -2,11 +2,10 @@ package org.sahagin.groovy.runlib.external.adapter.geb
 
 import geb.Browser
 
-import org.fluentlenium.core.Fluent
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.remote.SessionNotFoundException
+import org.openqa.selenium.NoSuchSessionException
 import org.sahagin.groovy.runlib.external.adapter.GroovyAdapterContainer
 import org.sahagin.runlib.external.adapter.Adapter
 import org.sahagin.runlib.external.adapter.AdapterContainer
@@ -56,7 +55,7 @@ class GebAdapter implements Adapter {
             try {
                 return ((TakesScreenshot) driver)
                         .getScreenshotAs(OutputType.BYTES)
-            } catch (SessionNotFoundException e) {
+            } catch (NoSuchSessionException e) {
                 // just do nothing if WebDriver instance is in invalid state
                 return null
             }
@@ -88,9 +87,9 @@ class GebAdapter implements Adapter {
             methodAdd("geb.Browser", "go", "String")
             methodAdd("geb.Browser", "to", "java.lang.Class,Object[]", 1)
             methodAdd("geb.navigator.Navigator", "click")
-            methodAdd("geb.navigator.Navigator", "text")           
+            methodAdd("geb.navigator.Navigator", "text")
             methodAdd("geb.navigator.Navigator", "value", "Object")
-            methodAdd("geb.navigator.Navigator", "value", "void")           
+            methodAdd("geb.navigator.Navigator", "value", "void")
             methodAdd("geb.Page", '$', "java.util.Map")
             methodAdd("geb.Page", '$', "String")
         }
